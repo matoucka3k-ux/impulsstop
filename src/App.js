@@ -1239,7 +1239,142 @@ const badges = [
   { emoji: "🏆", name: "ImpulsStop Master", days: 60 },
 ];
 
-function Streak({ streak, setStreak, totalSaved, addSavings }) {
+// ─── GOALS MINI (used in Streak) ─────────────────────────────────────────────
+function GoalsMini({ totalSaved }) {
+  const [goals, setGoals] = useState([
+    { id: 1, name: "Voyage",   emoji: "✈️", target: 500,  saved: 87,  color: "#B8D4C8" },
+    { id: 2, name: "Sneakers", emoji: "👟", target: 150,  saved: 32,  color: "#E8C4A0" },
+    { id: 3, name: "Épargne",  emoji: "🏦", target: 1000, saved: 220, color: "#9CAF88" },
+  ]);
+  const [showAdd, setShowAdd]     = useState(false);
+  const [showAlloc, setShowAlloc] = useState(null);
+  const [allocAmount, setAllocAmount] = useState("");
+  const [name, setName]   = useState("");
+  const [target, setTarget] = useState("");
+  const [emoji, setEmoji]   = useState("🎯");
+  const emojis = ["✈️","👟","🎮","🏠","🎁","🎓","🚗","💻","🌴","🎸","🏦","💍"];
+
+  const totalAllocated = goals.reduce((s, g) => s + g.saved, 0);
+  const available = Math.max(0, totalSaved - totalAllocated);
+
+  const allocate = (id, amount) => {
+    const amt = parseFloat(amount);
+    if (!amt || amt <= 0 || amt > available) return;
+    setGoals(prev => prev.map(g => {
+      if (g.id !== id) return g;
+      const add = Math.min(amt, g.target - g.saved);
+      return { ...g, saved: g.saved + add };
+    }));
+    setAllocAmount(""); setShowAlloc(null);
+  };
+
+  const addGoal = () => {
+    if (!name || !target) return;
+    const colors = ["#B8D4C8","#E8C4A0","#9CAF88","#D4856A","#B8A8D4"];
+    setGoals(prev => [...prev, { id: Date.now(), name, emoji, target: parseFloat(target), saved: 0, color: colors[prev.length % colors.length] }]);
+    setName(""); setTarget(""); setEmoji("🎯"); setShowAdd(false);
+  };
+
+  return (
+    <div>
+      {/* Disponible */}
+      <div style={{ background: 'rgba(156,175,136,0.06)', border: '1px solid rgba(156,175,136,0.15)', borderRadius: 16, padding: '12px 16px', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>Disponible à allouer</span>
+        <span style={{ fontFamily: 'Cormorant Garamond', fontSize: 22, fontWeight: 400, color: '#9CAF88' }}>{available.toFixed(0)}€</span>
+      </div>
+
+      {/* Liste compacte */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {goals.map(g => {
+          const pct = Math.min(100, Math.round((g.saved / g.target) * 100));
+          const done = pct >= 100;
+          const isOpen = showAlloc === g.id;
+          return (
+            <div key={g.id} style={{ borderRadius: 16, background: 'rgba(255,255,255,0.04)', border: `1.5px solid ${isOpen ? g.color + "50" : done ? g.color + "30" : "rgba(255,255,255,0.07)"}`, overflow: 'hidden', transition: 'all 0.2s' }}>
+              <div style={{ padding: '14px 16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                  <span style={{ fontSize: 20 }}>{g.emoji}</span>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ color: '#F0EDE8', fontSize: 14, fontWeight: 500, margin: '0 0 1px' }}>{g.name}</p>
+                    <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11, margin: 0 }}>{g.saved.toFixed(0)}€ / {g.target}€</p>
+                  </div>
+                  <span style={{ fontFamily: 'Cormorant Garamond', fontSize: 20, color: g.color }}>{pct}%</span>
+                </div>
+                <div style={{ height: 3, background: 'rgba(255,255,255,0.07)', borderRadius: 100, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: pct + '%', background: g.color, borderRadius: 100, transition: 'width 0.5s' }} />
+                </div>
+              </div>
+
+              {!done && (
+                <div style={{ borderTop: `1px solid ${isOpen ? g.color + "20" : "rgba(255,255,255,0.05)"}` }}>
+                  {!isOpen ? (
+                    <button onClick={() => { setShowAlloc(g.id); setAllocAmount(""); }}
+                      disabled={available <= 0}
+                      style={{ width: '100%', padding: '10px', background: 'transparent', border: 'none', color: available > 0 ? g.color : 'rgba(255,255,255,0.15)', fontSize: 12, fontWeight: 600, cursor: available > 0 ? 'pointer' : 'not-allowed' }}>
+                      {available > 0 ? '＋ Allouer des économies' : 'Aucune économie disponible'}
+                    </button>
+                  ) : (
+                    <div style={{ padding: '12px 14px', background: `${g.color}06` }}>
+                      <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11, margin: '0 0 8px' }}>
+                        Dispo : <span style={{ color: g.color, fontWeight: 600 }}>{available.toFixed(0)}€</span>
+                      </p>
+                      <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                        {[10, 25, 50, Math.min(available, g.target - g.saved)].filter((v, i, arr) => arr.indexOf(v) === i && v > 0).map(v => (
+                          <button key={v} onClick={() => setAllocAmount(String(v))}
+                            style={{ flex: 1, padding: '7px 4px', borderRadius: 10, border: `1px solid ${allocAmount === String(v) ? g.color : "rgba(255,255,255,0.1)"}`, background: allocAmount === String(v) ? `${g.color}20` : 'rgba(255,255,255,0.04)', color: allocAmount === String(v) ? g.color : 'rgba(255,255,255,0.4)', fontSize: 11, cursor: 'pointer' }}>
+                            {v === Math.min(available, g.target - g.saved) && v !== 10 && v !== 25 && v !== 50 ? "Tout" : `${v}€`}
+                          </button>
+                        ))}
+                        <input type="number" placeholder="€" value={allocAmount} onChange={e => setAllocAmount(e.target.value)}
+                          style={{ flex: 1, padding: '7px 4px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: '#F0EDE8', fontSize: 11, outline: 'none', textAlign: 'center', boxSizing: 'border-box', minWidth: 0 }} />
+                      </div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button onClick={() => { setShowAlloc(null); setAllocAmount(""); }}
+                          style={{ flex: 1, padding: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 100, color: 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer' }}>Annuler</button>
+                        <button onClick={() => allocate(g.id, allocAmount)}
+                          style={{ flex: 2, padding: '8px', background: allocAmount && parseFloat(allocAmount) > 0 ? g.color : 'rgba(255,255,255,0.05)', border: 'none', borderRadius: 100, color: allocAmount ? '#0D0D0D' : 'rgba(255,255,255,0.2)', fontWeight: 700, fontSize: 12, cursor: 'pointer', transition: 'all 0.2s' }}>
+                          Confirmer {allocAmount ? `${allocAmount}€` : ""}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              {done && <div style={{ padding: '8px', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}><span style={{ color: g.color, fontSize: 12, fontWeight: 600 }}>🎉 Atteint !</span></div>}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Ajouter objectif */}
+      <button onClick={() => setShowAdd(true)} style={{ width: '100%', padding: '12px', marginTop: 10, borderRadius: 14, background: 'transparent', border: '1.5px dashed rgba(156,175,136,0.2)', color: '#9CAF88', fontSize: 13, cursor: 'pointer' }}>
+        + Créer un objectif
+      </button>
+
+      {/* Modal ajout */}
+      {showAdd && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 200, padding: '0 16px 24px' }}>
+          <div className="scale-in" style={{ background: '#1A1A1A', borderRadius: 28, padding: '24px', width: '100%', maxWidth: 400, border: '1px solid rgba(255,255,255,0.08)' }}>
+            <p style={{ fontFamily: 'Cormorant Garamond', fontSize: 26, fontWeight: 400, fontStyle: 'italic', color: '#F0EDE8', marginBottom: 18 }}>Nouvel objectif</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+              {emojis.map(e => <button key={e} onClick={() => setEmoji(e)} style={{ fontSize: 20, padding: '7px 9px', borderRadius: 10, background: emoji === e ? 'rgba(156,175,136,0.2)' : 'rgba(255,255,255,0.05)', border: `1px solid ${emoji === e ? '#9CAF88' : 'transparent'}`, cursor: 'pointer' }}>{e}</button>)}
+            </div>
+            <input placeholder="Nom (ex: Voyage Tokyo)" value={name} onChange={e => setName(e.target.value)}
+              style={{ width: '100%', padding: '13px 16px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, color: '#F0EDE8', fontSize: 15, outline: 'none', marginBottom: 10, boxSizing: 'border-box' }} />
+            <input type="number" placeholder="Montant cible (€)" value={target} onChange={e => setTarget(e.target.value)}
+              style={{ width: '100%', padding: '13px 16px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, color: '#F0EDE8', fontSize: 15, outline: 'none', marginBottom: 16, boxSizing: 'border-box' }} />
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setShowAdd(false)} className="btn-ghost" style={{ flex: 1, padding: '13px' }}>Annuler</button>
+              <button onClick={addGoal} className="btn-primary" style={{ flex: 1, padding: '13px', fontSize: 15 }}>Créer</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Streak({ streak, setStreak, totalSaved, addSavings, setPage }) {
   const [popup, setPopup] = useState(null);
   const [amount, setAmount] = useState("");
   const [msg, setMsg] = useState("");
@@ -1254,7 +1389,6 @@ function Streak({ streak, setStreak, totalSaved, addSavings }) {
     if (popup === "resisted") {
       setStreak(s => s + 1);
       if (amount) addSavings(parseFloat(amount));
-      launchConfetti();
     } else {
       setStreak(0);
       setMsg("Pas grave. Demain est un nouveau jour. 💪");
@@ -1297,6 +1431,15 @@ function Streak({ streak, setStreak, totalSaved, addSavings }) {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Objectifs d'épargne */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <p style={{ fontFamily: 'Cormorant Garamond', fontSize: 24, fontWeight: 400, fontStyle: 'italic', color: '#F0EDE8', margin: 0 }}>Mes objectifs</p>
+          <button onClick={() => setPage('goals')} style={{ background: 'rgba(156,175,136,0.1)', border: '1px solid rgba(156,175,136,0.25)', borderRadius: 100, padding: '6px 14px', color: '#9CAF88', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Voir tout →</button>
+        </div>
+        <GoalsMini totalSaved={totalSaved} />
       </div>
 
       {/* Badges */}
@@ -2136,7 +2279,7 @@ export default function App() {
       )}
       {page === "plan" && premium && <Plan />}
       {page === "pause" && premium && <Pause addSavings={addSavings} />}
-      {page === "streak" && premium && <Streak streak={streak} setStreak={setStreak} totalSaved={totalSaved} addSavings={addSavings} />}
+      {page === "streak" && premium && <Streak streak={streak} setStreak={setStreak} totalSaved={totalSaved} addSavings={addSavings} setPage={setPage} />}
       {page === "goals" && premium && <Goals totalSaved={totalSaved} allocateSavings={allocateSavings} />}
       {page === "community" && premium && <Community userScore={score} />}
       {page === "profile" && premium && <Profile score={score} streak={streak} totalSaved={totalSaved} setPremium={setPremium} setPage={setPage} />}
