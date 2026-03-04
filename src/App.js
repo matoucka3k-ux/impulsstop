@@ -829,6 +829,122 @@ function Pause({ addSavings }) {
 }
 
 // ─── PLAN ─────────────────────────────────────────────────────────────────────
+
+const weekQuizzes = [
+  {
+    week: 1,
+    theme: "Observer sans se juger",
+    intro: "Ce quiz t'aide à cartographier tes patterns d'achat. Il n'y a pas de bonne ou mauvaise réponse — seulement ce qui est vrai pour toi.",
+    color: "#B8D4C8",
+    questions: [
+      {
+        q: "Quand tu ressens une forte envie d'acheter quelque chose, qu'est-ce qui se passe dans ton corps ?",
+        opts: ["Mon cœur s'accélère, je suis excité(e)", "Je me sens agité(e), presque anxieux(se)", "Une sorte de vide que je veux remplir", "Je ne remarque rien de particulier"],
+        insight: ["L'excitation avant l'achat est une réponse dopaminergique. C'est ton cerveau en mode récompense.", "Cette agitation est un signal d'anxiété. L'achat devient une tentative de la calmer.", "Ce vide est souvent émotionnel. L'achat y répond temporairement, mais ne le comble pas.", "L'automaticité de ta pulsion indique qu'elle est bien ancrée — ce n'est pas un défaut, c'est une habitude à observer."]
+      },
+      {
+        q: "À quel moment de la journée tu te retrouves le plus souvent à faire des achats non prévus ?",
+        opts: ["Le soir après le travail / les cours", "Quand je m'ennuie (n'importe quand)", "Quand je suis triste ou stressé(e)", "Le week-end, sans raison particulière"],
+        insight: ["Le soir, le cortex préfrontal — zone de la décision rationnelle — est fatigué. Tu résistes moins bien.", "L'ennui crée un manque de stimulation que le shopping comble facilement. C'est le déclencheur le plus courant.", "L'achat comme régulation émotionnelle. Ton cerveau a appris que ça soulage — temporairement.", "Le week-end libère les contraintes habituelles. Sans structure, les impulsions prennent plus de place."]
+      },
+      {
+        q: "Si tu regardes tes 5 derniers achats non essentiels, comment te sentais-tu dans les heures qui ont précédé ?",
+        opts: ["Je ne m'en souviens pas vraiment", "Plutôt bien, c'était juste envie", "J'avais vécu quelque chose de difficile", "J'étais en pause, sans rien à faire"],
+        insight: ["Ne pas se souvenir est un signe que l'achat est devenu automatique — un pilote automatique émotionnel.", "Acheter quand on se sent bien est moins problématique, mais peut devenir une célébration compulsive.", "C'est le pattern le plus courant. La difficulté émotionnelle cherche une sortie — l'achat en est une.", "L'état de repos sans stimulation déclenche une recherche de dopamine. Le shopping est accessible et immédiat."]
+      },
+      {
+        q: "Combien d'objets achètes-tu en moyenne par mois dont tu ne te sers plus après 2 semaines ?",
+        opts: ["1 à 2 maximum", "3 à 5 probablement", "Plus de 5, je préfère ne pas compter", "Je n'achète que des choses durables"],
+        insight: ["C'est un niveau sain. Tes achats ont généralement une utilité réelle.", "Environ la moitié de tes achats répondent à une envie plutôt qu'un besoin. Le programme va t'aider à voir lesquels.", "Cette accumulation signale une déconnexion entre l'envie d'acheter et le besoin réel. C'est fréquent, et ça se travaille.", "Excellent. Soit tu es déjà très conscient(e), soit cette période du programme va révéler des patterns cachés."]
+      },
+    ]
+  },
+  {
+    week: 2,
+    theme: "Comprendre tes déclencheurs",
+    intro: "Derrière chaque pulsion d'achat, il y a une émotion ou un besoin non exprimé. Ce quiz t'aide à identifier lesquels.",
+    color: "#9CAF88",
+    questions: [
+      {
+        q: "Quand tu résistes à un achat impulsif, quelle est ta réaction émotionnelle habituelle ?",
+        opts: ["Un sentiment de privation, presque de frustration", "Une légère anxiété, comme si je ratais quelque chose", "Une fierté rapide, puis j'oublie", "Rien de particulier — c'est facile"],
+        insight: ["La sensation de privation révèle que l'achat est lié à un besoin de récompense fort. Ce n'est pas de la faiblesse — c'est de la neurologie.", "Cette anxiété de 'rater' (FOMO) est alimentée par les algorithmes. Tu ressens exactement ce qu'ils ont conçu pour que tu ressentes.", "La fierté fugace montre que tu as la capacité — mais pas encore l'ancrage. Le programme va construire ça.", "Tu as peut-être une relation saine à l'achat, ou tes vraies tentations ne sont pas encore survenues cette semaine."]
+      },
+      {
+        q: "Est-ce que tu as déjà utilisé le shopping pour éviter de faire quelque chose d'important ?",
+        opts: ["Oui, régulièrement — c'est une forme de procrastination", "Parfois, sans m'en rendre compte sur le moment", "Rarement, mais ça m'est arrivé", "Non, je ne fais pas ce lien"],
+        insight: ["Le shopping comme évitement est une forme de procrastination hédonique. Tu échanges une anxiété difficile contre un plaisir facile.", "L'inconscience de l'évitement est la forme la plus courante. La prise de conscience que tu viens d'avoir est déjà une avancée.", "Même rare, ce pattern mérite attention. Il peut s'intensifier dans les périodes de pression.", "Observer cette semaine si ce lien émerge. Parfois il se cache sous des formes anodines."]
+      },
+      {
+        q: "Comment tu te sens généralement juste après avoir reçu un colis que tu attendais ?",
+        opts: ["Déçu(e) — l'objet est moins bien que prévu", "Satisfait(e) un moment, puis ça passe vite", "Coupable — pourquoi ai-je encore acheté ça ?", "Vraiment heureux(se), l'objet répond à un besoin"],
+        insight: ["La déception post-achat est liée à l'écart entre le fantasme de possession et la réalité. C'est la chute dopaminergique.", "Cette satisfaction brève est typique. Le pic de dopamine était dans l'attente, pas dans la possession.", "La culpabilité post-achat crée un cycle négatif. Elle peut elle-même déclencher de nouveaux achats pour s'en distraire.", "C'est le signe d'un achat conscient. Retiens ce sentiment — c'est la référence vers laquelle tendre."]
+      },
+      {
+        q: "Est-ce que tu as déjà caché des achats à quelqu'un de proche, ou minimisé leur coût ?",
+        opts: ["Oui, souvent — je préfère ne pas expliquer", "Une ou deux fois, dans des moments de tension", "Jamais, je suis transparent(e)", "Je vis seul(e) / ça ne s'applique pas"],
+        insight: ["Cacher ses achats est un signal fort. Il indique une dissonance entre ce que tu veux faire et ce que tu penses que tu devrais faire.", "Même occasionnel, ce pattern mérite d'être noté. Il signale une honte ou une tension autour de l'argent.", "C'est une force. La transparence réduit le pouvoir des comportements compulsifs.", "Dans ce cas, observe si tu te juges toi-même après certains achats — c'est une forme intérieure du même mécanisme."]
+      },
+    ]
+  },
+  {
+    week: 3,
+    theme: "Reconstruire tes automatismes",
+    intro: "Tu as observé. Tu as compris. Maintenant, on travaille sur le remplacement. Ce quiz évalue où tu en es dans ce processus.",
+    color: "#E8C4A0",
+    questions: [
+      {
+        q: "Cette semaine, as-tu trouvé une activité qui t'a procuré une satisfaction comparable à un achat ?",
+        opts: ["Oui — et c'était plus durable", "Un peu, mais moins intense", "Non, rien ne remplace vraiment ce sentiment", "Je n'ai pas vraiment cherché"],
+        insight: ["Excellent. Cela prouve que la dopamine peut être obtenue autrement. Garde cette activité en mémoire comme 'ancre'.", "La moindre intensité est normale au début. Les voies neuronales alternatives mettent du temps à se renforcer.", "Cette résistance est réelle et valide. Certains déclencheurs sont puissants. Continue à explorer — la bonne alternative existe.", "Le chercher activement est la prochaine étape. Pas de pression — même une petite expérimentation compte."]
+      },
+      {
+        q: "Quand une envie d'achat arrive, tu arrives maintenant à faire quoi ?",
+        opts: ["L'observer sans agir pendant quelques minutes", "La noter quelque part et y revenir plus tard", "Appeler ou écrire à quelqu'un", "Je cède encore souvent — c'est difficile"],
+        insight: ["Observer sans agir est la technique centrale du Dr. Judson Brewer. Tu as développé une capacité réelle.", "Externaliser l'envie (liste de souhaits, note) est une stratégie cognitive puissante. Elle crée une distance.", "Le soutien social est l'un des facteurs les plus efficaces dans le changement d'habitude. C'est une vraie force.", "La difficulté à résister à ce stade est normale — c'est pourquoi cette semaine existe. Tu n'es pas en échec."]
+      },
+      {
+        q: "Comment décrirais-tu ta relation avec l'argent en ce moment ?",
+        opts: ["Tendue — j'ai du mal à épargner malgré moi", "Floue — je ne sais pas vraiment où va mon argent", "En amélioration — je commence à voir plus clair", "Saine — l'argent est un outil, pas une émotion"],
+        insight: ["Cette tension est souvent liée à une relation émotionnelle à l'argent héritée. Le programme travaille précisément sur ça.", "Le flou financier protège parfois d'une vérité inconfortable. Poser des chiffres concrets est un acte courageux.", "C'est exactement la trajectoire attendue à la semaine 3. Continue — la clarté se renforce.", "Cette sérénité est l'objectif final. Tu es peut-être déjà en train de consolider ce que d'autres mettent des années à construire."]
+      },
+      {
+        q: "Est-ce que tu t'es surpris(e) à résister à une envie que tu n'aurais pas questionnée avant ?",
+        opts: ["Oui — plusieurs fois cette semaine", "Une fois, et c'était inattendu", "Non, mes schémas semblent les mêmes", "Oui, mais j'ai quand même acheté après réflexion"],
+        insight: ["Plusieurs résistances spontanées : tes nouvelles habitudes neurologiques commencent à s'installer. C'est un signal fort.", "Même une fois, c'est une rupture dans le pilote automatique. Ce moment mérite d'être célébré.", "Ne pas encore observer de changement ne signifie pas l'absence de progrès. Les semaines 1 et 2 plantent des graines invisibles.", "Acheter après réflexion consciente n'est pas un échec — c'est exactement le but. Tu as repris le contrôle du processus."]
+      },
+    ]
+  },
+  {
+    week: 4,
+    theme: "Ancrer et comprendre le fond",
+    intro: "La dernière semaine va plus loin. On explore l'origine de ta relation à la consommation — souvent construite bien avant tes premiers achats.",
+    color: "#E09080",
+    questions: [
+      {
+        q: "Dans ton enfance / adolescence, le shopping ou l'argent avait quelle place ?",
+        opts: ["On avait peu — j'ai grandi dans la restriction", "On achetait beaucoup — c'était une forme d'amour", "L'argent créait des tensions familiales", "Équilibré — ni sujet tabou, ni obsession"],
+        insight: ["La restriction dans l'enfance peut créer un rapport compensatoire à l'achat à l'âge adulte — 'maintenant je peux, alors j'achète'.", "Quand l'achat était une expression d'amour, on peut y chercher inconsciemment ce sentiment à l'âge adulte.", "Les tensions autour de l'argent dans l'enfance laissent souvent une charge émotionnelle — anxiété, impulsivité ou évitement.", "Un contexte sain est une base solide. Ton travail ici est peut-être plus de maintenir que de reconstruire."]
+      },
+      {
+        q: "Qu'est-ce que posséder de nouvelles choses signifie pour toi, au fond ?",
+        opts: ["Une forme de sécurité — avoir = être préparé", "Une expression de qui je suis / veux être", "Un soulagement temporaire d'une tension intérieure", "Simplement de la praticité — j'achète ce dont j'ai besoin"],
+        insight: ["Acheter comme sécurité est lié à l'anxiété. Les objets donnent une illusion de contrôle sur l'avenir.", "L'identité par les objets est puissamment cultivée par le marketing. Questionner ce lien est un acte de liberté.", "Tu as identifié le mécanisme central. Ce soulagement est réel mais bref — et la tension revient, souvent plus forte.", "C'est la relation la plus fonctionnelle à la consommation. Conserve-la en la conscientisant davantage."]
+      },
+      {
+        q: "Si tu n'achetais plus rien de non-essentiel pendant 6 mois, quelle serait ta peur principale ?",
+        opts: ["M'ennuyer profondément — le shopping occupe du temps", "Passer à côté de quelque chose d'important", "Ne plus me sentir 'moi' — une partie de mon identité", "Rien de particulier — ce serait libérateur"],
+        insight: ["Si le shopping occupe une place centrale dans ton temps libre, il remplace quelque chose. Quoi exactement ? C'est la question clé.", "La FOMO profonde révèle une anxiété existentielle. L'achat simule la participation à quelque chose de plus grand.", "Quand la consommation fait partie de l'identité, s'en défaire ressemble à une perte de soi. C'est un travail identitaire profond.", "Cette liberté perçue est la preuve que tu as intégré les fondamentaux. Tu n'es pas défini(e) par ce que tu possèdes."]
+      },
+      {
+        q: "Après ces 30 jours, quelle phrase décrit le mieux ton évolution ?",
+        opts: ["Je comprends maintenant pourquoi j'achetais — mais je lutte encore", "Je contrôle mieux mais j'ai encore des moments de faiblesse", "Ma relation à la consommation a fondamentalement changé", "Je suis au même point — le programme n'a pas eu d'impact"],
+        insight: ["Comprendre sans encore changer complètement est exactement là où tu devrais être à 30 jours. La conscience précède le changement.", "Les 'moments de faiblesse' ne sont pas des échecs — ils sont des données. Continue à les observer sans te juger.", "Un changement fondamental en 30 jours est rare et réel. Tu as fait un travail sérieux sur toi-même.", "Si le programme n'a pas eu d'impact, quelque chose a peut-être bloqué. Recommencer depuis le début, ou consulter un professionnel, peut être la prochaine étape."]
+      },
+    ]
+  },
+];
+
 const planWeeks = [
   {
     label: "Semaine 1 — Observe", color: "#B8D4C8",
@@ -872,89 +988,244 @@ const planWeeks = [
   },
 ];
 
-function Plan() {
-  const [checked, setChecked] = useState({});
-  const total = planWeeks.flatMap(w => w.days).length;
-  const done = Object.values(checked).filter(Boolean).length;
-  let idx = 0;
+function WeekQuiz({ quiz, onDone }) {
+  const [qIdx, setQIdx]         = useState(0);
+  const [answers, setAnswers]   = useState([]);
+  const [showResult, setShowResult] = useState(false);
+  const [selected, setSelected] = useState(null);
+
+  const current = quiz.questions[qIdx];
+  const total   = quiz.questions.length;
+
+  const choose = (i) => {
+    setSelected(i);
+    setTimeout(() => {
+      const newAnswers = [...answers, i];
+      if (qIdx + 1 < total) {
+        setAnswers(newAnswers);
+        setQIdx(qIdx + 1);
+        setSelected(null);
+      } else {
+        setAnswers(newAnswers);
+        setShowResult(true);
+      }
+    }, 350);
+  };
+
+  if (showResult) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#0D0D0D", padding: "40px 24px 100px", overflowY: "auto" }} className="fade-in">
+        {/* Header résultat */}
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
+          <div style={{ width: 64, height: 64, borderRadius: "50%", background: `${quiz.color}15`, border: `1px solid ${quiz.color}30`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, margin: "0 auto 16px" }}>🧠</div>
+          <p style={{ fontFamily: "DM Sans", fontSize: 11, letterSpacing: 3, color: quiz.color, textTransform: "uppercase", margin: "0 0 10px" }}>Analyse · Semaine {quiz.week}</p>
+          <h2 style={{ fontFamily: "Cormorant Garamond", fontSize: 30, fontWeight: 300, fontStyle: "italic", color: "#F0EDE8", lineHeight: 1.3, margin: "0 0 8px" }}>
+            Voilà ce que tes réponses révèlent
+          </h2>
+          <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 13, lineHeight: 1.6 }}>
+            Lis chaque insight lentement. Prends le temps d'y réfléchir.
+          </p>
+        </div>
+
+        {/* Insights personnalisés */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 28 }}>
+          {answers.map((ans, i) => {
+            const q = quiz.questions[i];
+            return (
+              <div key={i} style={{ background: `${quiz.color}08`, border: `1px solid ${quiz.color}20`, borderRadius: 20, padding: "18px 20px" }}>
+                <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 11, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", margin: "0 0 6px" }}>Question {i + 1}</p>
+                <p style={{ color: quiz.color, fontSize: 13, fontWeight: 500, margin: "0 0 10px", fontStyle: "italic" }}>"{q.opts[ans]}"</p>
+                <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, lineHeight: 1.8, margin: 0 }}>{q.insight[ans]}</p>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Conseil de la semaine */}
+        <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: "20px", marginBottom: 24 }}>
+          <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", margin: "0 0 12px" }}>Conseil pour cette semaine</p>
+          <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, lineHeight: 1.8, margin: 0, fontStyle: "italic" }}>
+            {quiz.week === 1 && "Tiens un carnet (papier ou notes téléphone) où tu notes chaque envie d'achat avec l'émotion du moment. Sans agir dessus. Juste observer."}
+            {quiz.week === 2 && "Identifie ton déclencheur principal à partir de tes réponses. Cette semaine, chaque fois qu'il se présente, nomme-le à voix haute ou dans ta tête : 'Tiens, mon déclencheur.'"}
+            {quiz.week === 3 && "Choisis UNE alternative concrète à ton comportement d'achat. Pas plusieurs — une seule. Et engage-toi à l'essayer à chaque envie cette semaine."}
+            {quiz.week === 4 && "Relis tes notes des 3 premières semaines. Écris en 5 lignes : qui étais-tu avant, qui es-tu maintenant par rapport à tes achats. Cette lettre est pour toi seul(e)."}
+          </p>
+        </div>
+
+        <button onClick={onDone} className="btn-primary" style={{ width: "100%", padding: "18px 0", fontSize: 16 }}>
+          Commencer les défis de la semaine →
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0D0D0D', padding: '32px 20px 100px' }}>
-      <div style={{ marginBottom: 24, padding: '0 4px' }}>
-        <span style={{ fontFamily: 'DM Sans', fontSize: 11, letterSpacing: 4, color: '#9CAF88', opacity: 0.7 }}>PROGRAMME</span>
-        <h2 style={{ fontFamily: 'Cormorant Garamond', fontSize: 40, fontWeight: 500, color: '#F0EDE8', letterSpacing: 2, margin: '4px 0 16px' }}>PLAN 30 JOURS</h2>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-          <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>{done} complétés</span>
-          <span style={{ color: '#9CAF88', fontSize: 13, fontWeight: 600 }}>{Math.round((done / total) * 100)}%</span>
+    <div style={{ minHeight: "100vh", background: "#0D0D0D", padding: "40px 24px 100px", display: "flex", flexDirection: "column" }} className="fade-in">
+      {/* Progress */}
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+          <span style={{ fontFamily: "DM Sans", fontSize: 11, letterSpacing: 3, color: quiz.color, textTransform: "uppercase" }}>Quiz · Semaine {quiz.week}</span>
+          <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 12 }}>{qIdx + 1} / {total}</span>
+        </div>
+        <div className="progress-bar">
+          <div className="progress-fill" style={{ width: `${((qIdx) / total) * 100}%`, background: quiz.color }} />
+        </div>
+      </div>
+
+      {/* Thème */}
+      <div style={{ background: `${quiz.color}08`, border: `1px solid ${quiz.color}20`, borderRadius: 14, padding: "10px 14px", marginBottom: 28, display: "flex", gap: 8 }}>
+        <span>🧠</span>
+        <p style={{ color: quiz.color, fontSize: 12, margin: 0, lineHeight: 1.5 }}>
+          <strong>{quiz.theme}</strong><br/>
+          <span style={{ color: "rgba(255,255,255,0.4)", fontWeight: 400 }}>{quiz.intro}</span>
+        </p>
+      </div>
+
+      {/* Question */}
+      <h2 style={{ fontFamily: "Cormorant Garamond", fontSize: 26, fontWeight: 400, color: "#F0EDE8", lineHeight: 1.5, marginBottom: 28, flex: 1 }}>
+        {current.q}
+      </h2>
+
+      {/* Options */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {current.opts.map((opt, i) => (
+          <div key={i}
+            onClick={() => selected === null && choose(i)}
+            style={{
+              padding: "16px 20px", borderRadius: 16, cursor: selected !== null ? "default" : "pointer",
+              background: selected === i ? `${quiz.color}20` : "rgba(255,255,255,0.04)",
+              border: `1.5px solid ${selected === i ? quiz.color : "rgba(255,255,255,0.08)"}`,
+              display: "flex", alignItems: "center", gap: 12,
+              transition: "all 0.2s", transform: selected === i ? "scale(0.99)" : "scale(1)",
+            }}>
+            <div style={{ width: 22, height: 22, borderRadius: "50%", flexShrink: 0, background: selected === i ? quiz.color : "transparent", border: `2px solid ${selected === i ? quiz.color : "rgba(255,255,255,0.2)"}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#0D0D0D", fontWeight: 700 }}>
+              {selected === i ? "✓" : ""}
+            </div>
+            <span style={{ fontSize: 14, color: selected === i ? quiz.color : "rgba(255,255,255,0.75)", lineHeight: 1.5 }}>{opt}</span>
+          </div>
+        ))}
+      </div>
+
+      <p style={{ color: "rgba(255,255,255,0.2)", fontSize: 12, textAlign: "center", marginTop: 20 }}>
+        Réponds honnêtement — personne ne voit tes réponses
+      </p>
+    </div>
+  );
+}
+
+function Plan() {
+  const [checked, setChecked]       = useState({});
+  const [quizDone, setQuizDone]     = useState({});   // { 0: true, 1: true, ... }
+  const [activeQuiz, setActiveQuiz] = useState(null); // week index 0-3
+
+  const total = planWeeks.flatMap(w => w.days).length;
+  const done  = Object.values(checked).filter(Boolean).length;
+  let idx = 0;
+
+  if (activeQuiz !== null) {
+    return (
+      <WeekQuiz
+        quiz={weekQuizzes[activeQuiz]}
+        onDone={() => { setQuizDone(q => ({ ...q, [activeQuiz]: true })); setActiveQuiz(null); }}
+      />
+    );
+  }
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#0D0D0D", padding: "32px 20px 100px" }}>
+      {/* Header */}
+      <div style={{ marginBottom: 24, padding: "0 4px" }}>
+        <span style={{ fontFamily: "DM Sans", fontSize: 11, letterSpacing: 4, color: "#9CAF88", opacity: 0.7 }}>PROGRAMME</span>
+        <h2 style={{ fontFamily: "Cormorant Garamond", fontSize: 38, fontWeight: 400, fontStyle: "italic", color: "#F0EDE8", margin: "4px 0 16px" }}>Plan 30 jours</h2>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+          <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 13 }}>{done} défis complétés</span>
+          <span style={{ color: "#9CAF88", fontSize: 13, fontWeight: 600 }}>{Math.round((done / total) * 100)}%</span>
         </div>
         <div className="progress-bar" style={{ height: 4 }}>
           <div className="progress-fill" style={{ width: `${(done / total) * 100}%` }} />
         </div>
       </div>
 
-      {planWeeks.map((week, wi) => (
-        <div key={wi} style={{ marginBottom: 28 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, padding: '0 4px' }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: week.color }} />
-            <span style={{ fontSize: 12, fontWeight: 600, color: week.color, letterSpacing: 1, textTransform: 'uppercase' }}>{week.label}</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {/* Expert citation */}
-          {week.expert && (
-            <div style={{
-              background: `${week.color}08`, border: `1px solid ${week.color}25`,
-              borderRadius: 16, padding: '14px 16px', marginBottom: 12,
-            }}>
-              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 8 }}>
-                <span style={{ fontSize: 18, flexShrink: 0 }}>👨‍⚕️</span>
-                <div>
-                  <p style={{ color: week.color, fontSize: 12, fontWeight: 700, margin: '0 0 1px' }}>{week.expert.name}</p>
-                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, margin: 0 }}>{week.expert.title}</p>
-                </div>
-              </div>
-              <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 13, lineHeight: 1.5, fontStyle: 'italic', margin: '0 0 10px' }}>
-                "{week.expert.quote}"
-              </p>
-              <a href={week.expert.link} target="_blank" rel="noopener noreferrer" style={{
-                color: week.color, fontSize: 12, textDecoration: 'none', fontWeight: 600,
-                display: 'inline-flex', alignItems: 'center', gap: 4,
-                padding: '5px 12px', borderRadius: 100,
-                background: `${week.color}15`, border: `1px solid ${week.color}30`,
-              }}>
-                🔗 {week.expert.linkLabel}
-              </a>
+      {planWeeks.map((week, wi) => {
+        const quiz      = weekQuizzes[wi];
+        const isDone    = quizDone[wi];
+        const weekColor = week.color;
+        return (
+          <div key={wi} style={{ marginBottom: 32 }}>
+            {/* Titre semaine */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, padding: "0 4px" }}>
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: weekColor }} />
+              <span style={{ fontSize: 12, fontWeight: 600, color: weekColor, letterSpacing: 1, textTransform: "uppercase" }}>{week.label}</span>
             </div>
-          )}
-            {week.days.map((day, di) => {
-              const i = idx++;
-              const isChecked = checked[i];
-              return (
-                <div key={i} onClick={() => setChecked(c => ({ ...c, [i]: !c[i] }))}
-                  style={{
-                    padding: '14px 16px', borderRadius: 16, cursor: 'pointer',
-                    background: isChecked ? `${week.color}15` : 'rgba(255,255,255,0.04)',
-                    border: `1.5px solid ${isChecked ? week.color + '40' : 'rgba(255,255,255,0.07)'}`,
-                    display: 'flex', gap: 12, alignItems: 'flex-start',
-                    transition: 'all 0.2s'
-                  }}>
-                  <div style={{
-                    width: 20, height: 20, borderRadius: '50%', flexShrink: 0, marginTop: 1,
-                    background: isChecked ? week.color : 'transparent',
-                    border: `2px solid ${isChecked ? week.color : 'rgba(255,255,255,0.2)'}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10
-                  }}>
-                    {isChecked && "✓"}
+
+            {/* Quiz card — toujours en premier */}
+            <div style={{
+              background: isDone ? `${weekColor}08` : "rgba(255,255,255,0.04)",
+              border: `1.5px solid ${isDone ? weekColor + "35" : weekColor + "30"}`,
+              borderRadius: 20, padding: "18px 20px", marginBottom: 14,
+              cursor: "pointer", transition: "all 0.2s",
+            }} onClick={() => setActiveQuiz(wi)}>
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ width: 44, height: 44, borderRadius: "50%", background: `${weekColor}15`, border: `1px solid ${weekColor}30`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>
+                  {isDone ? "✅" : "🧠"}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
+                    <p style={{ color: "#F0EDE8", fontSize: 15, fontWeight: 500, margin: 0 }}>Quiz de la semaine</p>
+                    {!isDone && <span style={{ background: weekColor + "25", borderRadius: 100, padding: "2px 8px", fontSize: 10, color: weekColor, fontWeight: 700 }}>NOUVEAU</span>}
                   </div>
+                  <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, margin: 0 }}>
+                    {isDone ? `Terminé · ${quiz.theme}` : quiz.theme}
+                  </p>
+                </div>
+                <span style={{ color: isDone ? weekColor : "rgba(255,255,255,0.3)", fontSize: 20 }}>{isDone ? "✓" : "›"}</span>
+              </div>
+              {!isDone && (
+                <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, margin: "12px 0 0", lineHeight: 1.5, paddingLeft: 58 }}>
+                  4 questions · Analyse psychologique personnalisée
+                </p>
+              )}
+            </div>
+
+            {/* Citation expert */}
+            {week.expert && (
+              <div style={{ background: `${weekColor}06`, border: `1px solid ${weekColor}20`, borderRadius: 16, padding: "14px 16px", marginBottom: 12 }}>
+                <div style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 8 }}>
+                  <span style={{ fontSize: 18, flexShrink: 0 }}>👨‍⚕️</span>
                   <div>
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: 3, display: 'block' }}>Jour {i + 1}</span>
-                    <span style={{ fontSize: 14, color: isChecked ? week.color : 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>{day}</span>
+                    <p style={{ color: weekColor, fontSize: 12, fontWeight: 700, margin: "0 0 1px" }}>{week.expert.name}</p>
+                    <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, margin: 0 }}>{week.expert.title}</p>
                   </div>
                 </div>
-              );
-            })}
+                <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, lineHeight: 1.6, fontStyle: "italic", margin: "0 0 10px" }}>"{week.expert.quote}"</p>
+                <a href={week.expert.link} target="_blank" rel="noopener noreferrer" style={{ color: weekColor, fontSize: 12, textDecoration: "none", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4, padding: "5px 12px", borderRadius: 100, background: `${weekColor}12`, border: `1px solid ${weekColor}25` }}>
+                  🔗 {week.expert.linkLabel}
+                </a>
+              </div>
+            )}
+
+            {/* Défis quotidiens */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {week.days.map((day, di) => {
+                const i = idx++;
+                const isChecked = checked[i];
+                return (
+                  <div key={i} onClick={() => setChecked(c => ({ ...c, [i]: !c[i] }))}
+                    style={{ padding: "14px 16px", borderRadius: 16, cursor: "pointer", background: isChecked ? `${weekColor}12` : "rgba(255,255,255,0.03)", border: `1.5px solid ${isChecked ? weekColor + "35" : "rgba(255,255,255,0.06)"}`, display: "flex", gap: 12, alignItems: "flex-start", transition: "all 0.2s" }}>
+                    <div style={{ width: 20, height: 20, borderRadius: "50%", flexShrink: 0, marginTop: 1, background: isChecked ? weekColor : "transparent", border: `2px solid ${isChecked ? weekColor : "rgba(255,255,255,0.2)"}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#0D0D0D", fontWeight: 700 }}>
+                      {isChecked && "✓"}
+                    </div>
+                    <div>
+                      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginBottom: 3, display: "block" }}>Jour {i + 1}</span>
+                      <span style={{ fontSize: 14, color: isChecked ? weekColor : "rgba(255,255,255,0.65)", lineHeight: 1.6 }}>{day}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
