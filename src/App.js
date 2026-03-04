@@ -986,192 +986,337 @@ function Goals({ totalSaved, allocateSavings }) {
 // ─── APP ROOT ─────────────────────────────────────────────────────────────────
 // ─── PROFILE ──────────────────────────────────────────────────────────────────
 function Profile({ score, streak, totalSaved, setPremium, setPage }) {
-  const { label, color, savings } = getConfig(score);
+  const { label, color } = getConfig(score);
   const [notifs, setNotifs] = useState(true);
   const [reminders, setReminders] = useState(true);
   const [showLogout, setShowLogout] = useState(false);
   const [showCancel, setShowCancel] = useState(false);
-  const [plan, setPlan] = useState("annual"); // "monthly" | "annual"
+  const [showBilling, setShowBilling] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showRate, setShowRate] = useState(false);
+  const [stars, setStars] = useState(0);
+  const [hoverStar, setHoverStar] = useState(0);
+  const [rated, setRated] = useState(false);
+  const [plan, setPlan] = useState("annual");
 
-  const level = streak < 7 ? { name: "Débutant", next: 7, icon: "🌱" }
+  const level = streak < 7  ? { name: "Débutant",     next: 7,  icon: "🌱" }
     : streak < 30 ? { name: "Intermédiaire", next: 30, icon: "🌿" }
-    : streak < 60 ? { name: "Avancé", next: 60, icon: "🌳" }
-    : { name: "Maître", next: null, icon: "🏆" };
-
+    : streak < 60 ? { name: "Avancé",        next: 60, icon: "🌳" }
+    :               { name: "Maître",         next: null, icon: "🏆" };
   const pct = level.next ? Math.round((streak / level.next) * 100) : 100;
 
   const Toggle = ({ value, onChange }) => (
-    <div onClick={() => onChange(!value)} style={{
-      width: 44, height: 24, borderRadius: 100, cursor: 'pointer',
-      background: value ? color : 'rgba(255,255,255,0.12)',
-      transition: 'background 0.3s', position: 'relative', flexShrink: 0,
-    }}>
-      <div style={{
-        position: 'absolute', top: 3, left: value ? 23 : 3,
-        width: 18, height: 18, borderRadius: '50%', background: 'white',
-        transition: 'left 0.3s', boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
-      }} />
+    <div onClick={() => onChange(!value)} style={{ width: 44, height: 24, borderRadius: 100, cursor: "pointer", background: value ? color : "rgba(255,255,255,0.12)", transition: "background 0.3s", position: "relative", flexShrink: 0 }}>
+      <div style={{ position: "absolute", top: 3, left: value ? 23 : 3, width: 18, height: 18, borderRadius: "50%", background: "white", transition: "left 0.3s", boxShadow: "0 1px 4px rgba(0,0,0,0.3)" }} />
     </div>
   );
 
   const Section = ({ title, children }) => (
     <div style={{ marginBottom: 24 }}>
-      <p style={{ fontFamily: 'DM Sans', fontSize: 10, letterSpacing: 3, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', marginBottom: 10, paddingLeft: 4 }}>{title}</p>
-      <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 20, overflow: 'hidden' }}>
+      <p style={{ fontFamily: "DM Sans", fontSize: 10, letterSpacing: 3, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", marginBottom: 10, paddingLeft: 4 }}>{title}</p>
+      <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, overflow: "hidden" }}>{children}</div>
+    </div>
+  );
+
+  const Row = ({ icon, label, right, onClick, danger, last }) => (
+    <div onClick={onClick} style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px", borderBottom: last ? "none" : "1px solid rgba(255,255,255,0.05)", cursor: onClick ? "pointer" : "default" }}>
+      <span style={{ fontSize: 17, width: 22, textAlign: "center", flexShrink: 0 }}>{icon}</span>
+      <span style={{ flex: 1, fontSize: 14, color: danger ? "#E09080" : "rgba(255,255,255,0.8)" }}>{label}</span>
+      {right && <span style={{ fontSize: 13, color: "rgba(255,255,255,0.3)" }}>{right}</span>}
+      {onClick && !right && <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 18 }}>›</span>}
+    </div>
+  );
+
+  const Modal = ({ children, onClose }) => (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", flexDirection: "column", zIndex: 200, overflowY: "auto" }}>
+      <div style={{ minHeight: "100vh", padding: "0 20px 40px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "20px 0 24px", position: "sticky", top: 0, background: "rgba(13,13,13,0.97)", backdropFilter: "blur(12px)", zIndex: 10, marginBottom: 8 }}>
+          <button onClick={onClose} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "50%", width: 36, height: 36, cursor: "pointer", color: "#F0EDE8", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>←</button>
+        </div>
         {children}
       </div>
     </div>
   );
 
-  const Row = ({ icon, label, right, onClick, danger, last }) => (
-    <div onClick={onClick} style={{
-      display: 'flex', alignItems: 'center', gap: 14,
-      padding: '15px 18px',
-      borderBottom: last ? 'none' : '1px solid rgba(255,255,255,0.05)',
-      cursor: onClick ? 'pointer' : 'default',
-      transition: 'background 0.15s',
-    }}
-    onMouseEnter={e => { if (onClick) e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
-    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
-    >
-      <span style={{ fontSize: 17, width: 22, textAlign: 'center', flexShrink: 0 }}>{icon}</span>
-      <span style={{ flex: 1, fontSize: 14, color: danger ? '#E09080' : 'rgba(255,255,255,0.8)', fontWeight: 400 }}>{label}</span>
-      {right && <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>{right}</span>}
-      {onClick && !right && <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 16 }}>›</span>}
+  // ── Billing modal
+  const fakeBills = [
+    { date: "01 Juin 2025",    amount: "24,99€", plan: "Annuel",  status: "Payé", id: "INV-2025-006" },
+    { date: "01 Juin 2024",    amount: "24,99€", plan: "Annuel",  status: "Payé", id: "INV-2024-006" },
+    { date: "01 Mai 2024",     amount: "3,99€",  plan: "Mensuel", status: "Payé", id: "INV-2024-005" },
+    { date: "01 Avril 2024",   amount: "3,99€",  plan: "Mensuel", status: "Payé", id: "INV-2024-004" },
+    { date: "01 Mars 2024",    amount: "3,99€",  plan: "Mensuel", status: "Payé", id: "INV-2024-003" },
+  ];
+
+  if (showBilling) return (
+    <Modal onClose={() => setShowBilling(false)}>
+      <p style={{ fontFamily: "Cormorant Garamond", fontSize: 32, fontWeight: 400, color: "#F0EDE8", marginBottom: 24 }}>Historique de facturation</p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {fakeBills.map(b => (
+          <div key={b.id} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: "16px 18px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+              <div>
+                <p style={{ color: "#F0EDE8", fontSize: 15, fontWeight: 500, margin: "0 0 3px" }}>{b.amount}</p>
+                <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, margin: 0 }}>{b.plan} · {b.date}</p>
+              </div>
+              <span style={{ background: "rgba(156,175,136,0.15)", border: "1px solid rgba(156,175,136,0.3)", borderRadius: 100, padding: "4px 10px", fontSize: 11, color: "#9CAF88" }}>{b.status}</span>
+            </div>
+            <p style={{ color: "rgba(255,255,255,0.2)", fontSize: 11, margin: 0, fontFamily: "DM Sans" }}>{b.id}</p>
+          </div>
+        ))}
+      </div>
+      <div style={{ marginTop: 24, background: "rgba(156,175,136,0.06)", border: "1px solid rgba(156,175,136,0.15)", borderRadius: 16, padding: "14px 16px" }}>
+        <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, margin: 0, lineHeight: 1.6 }}>
+          📧 Tes factures sont également envoyées par email après chaque paiement. Pour toute question : <span style={{ color: "#9CAF88" }}>support@impulsstop.app</span>
+        </p>
+      </div>
+    </Modal>
+  );
+
+  // ── About modal
+  if (showAbout) return (
+    <Modal onClose={() => setShowAbout(false)}>
+      <div style={{ textAlign: "center", marginBottom: 32 }}>
+        <div style={{ width: 80, height: 80, borderRadius: "50%", background: "rgba(156,175,136,0.1)", border: "1px solid rgba(156,175,136,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, margin: "0 auto 16px" }}>🌿</div>
+        <p style={{ fontFamily: "Cormorant Garamond", fontSize: 38, fontWeight: 400, color: "#F0EDE8", margin: "0 0 4px" }}>ImpulsStop</p>
+        <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 13 }}>Version 1.0.0</p>
+      </div>
+
+      <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "20px", marginBottom: 16 }}>
+        <p style={{ color: "#9CAF88", fontSize: 12, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", margin: "0 0 10px" }}>Notre mission</p>
+        <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, lineHeight: 1.8, margin: 0 }}>
+          ImpulsStop aide les jeunes adultes à comprendre et reprendre le contrôle de leurs habitudes d'achat impulsif — avec bienveillance, sans culpabilité. Ce n'est pas ta faute. Les marques sont conçues pour te faire craquer. Nous sommes là pour t'aider à voir plus clair.
+        </p>
+      </div>
+
+      <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "20px", marginBottom: 16 }}>
+        <p style={{ color: "#9CAF88", fontSize: 12, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", margin: "0 0 16px" }}>Le fondateur</p>
+        <div style={{ display: "flex", gap: 14, alignItems: "center", marginBottom: 12 }}>
+          <div style={{ width: 52, height: 52, borderRadius: "50%", background: "linear-gradient(135deg, rgba(156,175,136,0.3), rgba(156,175,136,0.1))", border: "1px solid rgba(156,175,136,0.4)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Cormorant Garamond", fontSize: 22, color: "#9CAF88", fontWeight: 600, flexShrink: 0 }}>M</div>
+          <div>
+            <p style={{ color: "#F0EDE8", fontSize: 16, fontWeight: 600, margin: "0 0 2px" }}>Mathis Bobo</p>
+            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, margin: 0 }}>Fondateur & CEO · ImpulsStop</p>
+          </div>
+        </div>
+        <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, lineHeight: 1.7, margin: 0, fontStyle: "italic" }}>
+          "J'ai créé ImpulsStop après avoir réalisé que mes propres achats compulsifs étaient liés à mes émotions, pas à de vrais besoins. Cette app, c'est l'outil que j'aurais voulu avoir."
+        </p>
+      </div>
+
+      <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "20px", marginBottom: 16 }}>
+        <p style={{ color: "#9CAF88", fontSize: 12, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", margin: "0 0 12px" }}>Basé sur la science</p>
+        {[
+          { name: "Bergen Shopping Addiction Scale", author: "Andreassen et al.", detail: "23 537 participants · Université de Bergen" },
+          { name: "Dopamine Nation", author: "Dr. Anna Lembke", detail: "Psychiatre · Stanford University" },
+          { name: "Tiny Habits", author: "Dr. BJ Fogg", detail: "Chercheur en comportement · Stanford" },
+          { name: "Unwinding Anxiety", author: "Dr. Judson Brewer", detail: "Neuroscientifique · Brown University" },
+        ].map(s => (
+          <div key={s.name} style={{ paddingBottom: 10, marginBottom: 10, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+            <p style={{ color: "#F0EDE8", fontSize: 13, fontWeight: 500, margin: "0 0 2px" }}>{s.name}</p>
+            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, margin: 0 }}>{s.author} · {s.detail}</p>
+          </div>
+        ))}
+      </div>
+
+      <p style={{ textAlign: "center", color: "rgba(255,255,255,0.2)", fontSize: 12, marginTop: 8 }}>
+        📧 contact@impulsstop.app<br/>
+        Fait avec 🌿 pour reprendre le contrôle
+      </p>
+    </Modal>
+  );
+
+  // ── Privacy modal
+  if (showPrivacy) return (
+    <Modal onClose={() => setShowPrivacy(false)}>
+      <p style={{ fontFamily: "Cormorant Garamond", fontSize: 32, fontWeight: 400, color: "#F0EDE8", marginBottom: 6 }}>Politique de confidentialité</p>
+      <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, marginBottom: 24 }}>Dernière mise à jour : 1er juin 2025</p>
+      {[
+        {
+          title: "1. Responsable du traitement",
+          text: "ImpulsStop, représenté par Mathis Bobo (contact@impulsstop.app), est responsable du traitement de vos données personnelles conformément au Règlement Général sur la Protection des Données (RGPD - Règlement UE 2016/679)."
+        },
+        {
+          title: "2. Données collectées",
+          text: "Nous collectons uniquement les données nécessaires au fonctionnement de l'app : adresse email (authentification), score et profil comportemental, streak et économies réalisées, préférences de notifications. Nous ne collectons jamais vos données bancaires — les paiements sont gérés par Stripe, certifié PCI DSS."
+        },
+        {
+          title: "3. Finalités du traitement",
+          text: "Vos données sont utilisées pour : personnaliser votre expérience et suivi, gérer votre abonnement Premium, vous envoyer des rappels si activés, améliorer l'application de manière anonymisée."
+        },
+        {
+          title: "4. Base légale",
+          text: "Le traitement est fondé sur l'exécution du contrat (art. 6.1.b RGPD) pour les données nécessaires au service, et sur votre consentement (art. 6.1.a RGPD) pour les communications marketing."
+        },
+        {
+          title: "5. Durée de conservation",
+          text: "Vos données sont conservées pendant toute la durée de votre compte, puis supprimées dans un délai de 30 jours après fermeture. Les données de facturation sont conservées 10 ans conformément aux obligations légales françaises."
+        },
+        {
+          title: "6. Vos droits (RGPD)",
+          text: "Vous disposez des droits suivants : accès à vos données, rectification, suppression (droit à l'oubli), portabilité, opposition au traitement, limitation du traitement. Pour exercer ces droits : contact@impulsstop.app. Délai de réponse : 30 jours maximum."
+        },
+        {
+          title: "7. Partage des données",
+          text: "Nous ne vendons jamais vos données. Elles peuvent être partagées uniquement avec nos sous-traitants techniques : Supabase (hébergement base de données, UE), Stripe (paiements, certifié PCI DSS), Vercel (hébergement app, UE)."
+        },
+        {
+          title: "8. Cookies",
+          text: "ImpulsStop utilise uniquement des cookies techniques essentiels au fonctionnement de l'app (session, authentification). Aucun cookie publicitaire ou de tracking tiers n'est utilisé."
+        },
+        {
+          title: "9. Sécurité",
+          text: "Vos données sont chiffrées en transit (TLS 1.3) et au repos. L'accès est protégé par authentification forte. En cas de violation de données, vous serez notifié dans les 72h conformément au RGPD."
+        },
+        {
+          title: "10. Contact & réclamations",
+          text: "Pour toute question : contact@impulsstop.app. Vous pouvez également déposer une réclamation auprès de la CNIL (Commission Nationale de l'Informatique et des Libertés) : cnil.fr"
+        },
+      ].map(s => (
+        <div key={s.title} style={{ marginBottom: 20 }}>
+          <p style={{ color: "#9CAF88", fontSize: 13, fontWeight: 600, margin: "0 0 6px" }}>{s.title}</p>
+          <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, lineHeight: 1.8, margin: 0 }}>{s.text}</p>
+        </div>
+      ))}
+    </Modal>
+  );
+
+  // ── Rate modal
+  if (showRate) return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 200, padding: "0 16px 32px" }}>
+      <div className="scale-in" style={{ width: "100%", maxWidth: 400, background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 28, padding: "28px 24px", textAlign: "center" }}>
+        {!rated ? (
+          <>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>🌿</div>
+            <p style={{ fontFamily: "Cormorant Garamond", fontSize: 26, fontWeight: 400, color: "#F0EDE8", margin: "0 0 6px" }}>Tu aimes ImpulsStop ?</p>
+            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 24, lineHeight: 1.6 }}>Ton avis compte beaucoup pour nous et aide d'autres personnes à découvrir l'app.</p>
+            <div style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 28 }}>
+              {[1,2,3,4,5].map(s => (
+                <span key={s}
+                  onMouseEnter={() => setHoverStar(s)}
+                  onMouseLeave={() => setHoverStar(0)}
+                  onClick={() => setStars(s)}
+                  style={{ fontSize: 40, cursor: "pointer", transition: "transform 0.15s", transform: (hoverStar || stars) >= s ? "scale(1.2)" : "scale(1)", filter: (hoverStar || stars) >= s ? "none" : "grayscale(1) opacity(0.4)" }}
+                >⭐</span>
+              ))}
+            </div>
+            <button onClick={() => { if (stars > 0) setRated(true); }} style={{ width: "100%", padding: "16px", background: stars > 0 ? "#9CAF88" : "rgba(255,255,255,0.08)", border: "none", borderRadius: 100, color: stars > 0 ? "#0D0D0D" : "rgba(255,255,255,0.3)", fontFamily: "DM Sans", fontWeight: 700, fontSize: 15, cursor: stars > 0 ? "pointer" : "not-allowed", marginBottom: 10, transition: "all 0.2s" }}>
+              Envoyer mon avis {stars > 0 ? `(${stars}★)` : ""}
+            </button>
+            <button onClick={() => setShowRate(false)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)", fontSize: 13, cursor: "pointer" }}>Plus tard</button>
+          </>
+        ) : (
+          <>
+            <div style={{ fontSize: 56, marginBottom: 16 }}>🎉</div>
+            <p style={{ fontFamily: "Cormorant Garamond", fontSize: 26, fontWeight: 400, color: "#F0EDE8", margin: "0 0 10px" }}>Merci beaucoup !</p>
+            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>Ton avis {stars} étoile{stars > 1 ? "s" : ""} nous aide énormément. On travaille chaque jour pour mériter ta confiance. 🌿</p>
+            <button onClick={() => { setShowRate(false); setRated(false); setStars(0); }} className="btn-primary" style={{ width: "100%", padding: "16px", fontSize: 15 }}>Fermer</button>
+          </>
+        )}
+      </div>
     </div>
   );
 
+  // ── Main profile view
   return (
-    <div style={{ minHeight: '100vh', background: '#0D0D0D', padding: '32px 20px 100px', overflowY: 'auto' }}>
+    <div style={{ minHeight: "100vh", background: "#0D0D0D", padding: "32px 20px 100px", overflowY: "auto" }}>
 
       {/* Header */}
-      <div className="fade-up-1" style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28 }}>
-        <div style={{
-          width: 64, height: 64, borderRadius: '50%',
-          background: `linear-gradient(135deg, ${color}30, ${color}10)`,
-          border: `1.5px solid ${color}50`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 28,
-        }}>
+      <div className="fade-up-1" style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 28 }}>
+        <div style={{ width: 64, height: 64, borderRadius: "50%", background: `linear-gradient(135deg, ${color}30, ${color}10)`, border: `1.5px solid ${color}50`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>
           {level.icon}
         </div>
         <div>
-          <p style={{ fontFamily: 'Cormorant Garamond', fontSize: 22, fontWeight: 500, color: '#F0EDE8', margin: '0 0 2px' }}>Mon Profil</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <p style={{ fontFamily: "Cormorant Garamond", fontSize: 24, fontWeight: 500, color: "#F0EDE8", margin: "0 0 2px" }}>Mon Profil</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 11, color: color, fontWeight: 600 }}>{label}</span>
-            <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'rgba(255,255,255,0.2)' }} />
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>Niveau {level.name}</span>
+            <span style={{ width: 3, height: 3, borderRadius: "50%", background: "rgba(255,255,255,0.2)" }} />
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>Niveau {level.name}</span>
           </div>
         </div>
       </div>
 
-      {/* Stats row */}
-      <div className="fade-up-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 28 }}>
+      {/* Stats */}
+      <div className="fade-up-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
         {[
-          { label: 'Impuls Score', value: score, unit: '/100', c: color },
-          { label: 'Streak actuel', value: streak, unit: ' j', c: '#E8C4A0' },
-          { label: 'Économisé', value: `${totalSaved.toFixed(0)}€`, unit: '', c: '#B8D4C8' },
+          { label: "Impuls Score", value: score, unit: "/100", c: color },
+          { label: "Streak", value: streak, unit: " j", c: "#E8C4A0" },
+          { label: "Économisé", value: `${totalSaved.toFixed(0)}€`, unit: "", c: "#B8D4C8" },
         ].map(s => (
-          <div key={s.label} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: '14px 12px', textAlign: 'center' }}>
-            <p style={{ fontFamily: 'Cormorant Garamond', fontSize: 28, fontWeight: 400, color: s.c, margin: '0 0 3px', lineHeight: 1 }}>
-              {s.value}<span style={{ fontSize: 13, opacity: 0.6 }}>{s.unit}</span>
-            </p>
-            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', margin: 0 }}>{s.label}</p>
+          <div key={s.label} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: "14px 12px", textAlign: "center" }}>
+            <p style={{ fontFamily: "Cormorant Garamond", fontSize: 28, fontWeight: 400, color: s.c, margin: "0 0 3px", lineHeight: 1 }}>{s.value}<span style={{ fontSize: 13, opacity: 0.6 }}>{s.unit}</span></p>
+            <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", margin: 0 }}>{s.label}</p>
           </div>
         ))}
       </div>
 
       {/* Level progress */}
-      <div className="fade-up-2" style={{ background: `${color}0D`, border: `1px solid ${color}25`, borderRadius: 18, padding: '16px 18px', marginBottom: 28 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+      <div className="fade-up-2" style={{ background: `${color}0D`, border: `1px solid ${color}20`, borderRadius: 18, padding: "16px 18px", marginBottom: 24 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
           <span style={{ fontSize: 13, color: color, fontWeight: 600 }}>{level.icon} Niveau {level.name}</span>
-          {level.next
-            ? <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>{streak} / {level.next} jours</span>
-            : <span style={{ fontSize: 12, color: color }}>Niveau max !</span>}
+          {level.next ? <span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>{streak} / {level.next} jours</span> : <span style={{ fontSize: 12, color: color }}>Niveau max !</span>}
         </div>
-        <div style={{ height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 100, overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: pct + '%', background: color, borderRadius: 100, transition: 'width 0.6s' }} />
+        <div style={{ height: 4, background: "rgba(255,255,255,0.08)", borderRadius: 100, overflow: "hidden" }}>
+          <div style={{ height: "100%", width: pct + "%", background: color, borderRadius: 100, transition: "width 0.6s" }} />
         </div>
-        {level.next && (
-          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', marginTop: 6 }}>
-            Encore {level.next - streak} jours pour atteindre le niveau suivant
-          </p>
-        )}
+        {level.next && <p style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 6 }}>Encore {level.next - streak} jours pour le niveau suivant</p>}
       </div>
 
       {/* Subscription */}
       <div className="fade-up-3">
         <Section title="Abonnement">
-          <div style={{ padding: '16px 18px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <div style={{ padding: "16px 18px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <div>
-                <p style={{ color: '#F0EDE8', fontSize: 14, fontWeight: 500, margin: '0 0 2px' }}>
-                  ImpulsStop Premium
-                </p>
-                <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12, margin: 0 }}>
-                  {plan === 'annual' ? 'Annuel · 24,99€/an' : 'Mensuel · 3,99€/mois'}
-                </p>
+                <p style={{ color: "#F0EDE8", fontSize: 14, fontWeight: 500, margin: "0 0 2px" }}>ImpulsStop Premium</p>
+                <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, margin: 0 }}>{plan === "annual" ? "Annuel · 24,99€/an" : "Mensuel · 3,99€/mois"}</p>
               </div>
-              <span style={{ background: color + '20', border: `1px solid ${color}40`, borderRadius: 100, padding: '4px 10px', fontSize: 11, color: color, fontWeight: 600 }}>Actif</span>
+              <span style={{ background: color + "20", border: `1px solid ${color}40`, borderRadius: 100, padding: "4px 10px", fontSize: 11, color: color, fontWeight: 600 }}>Actif</span>
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => setPlan('monthly')} style={{
-                flex: 1, padding: '8px', borderRadius: 10, border: `1px solid ${plan === 'monthly' ? color : 'rgba(255,255,255,0.1)'}`,
-                background: plan === 'monthly' ? color + '15' : 'transparent',
-                color: plan === 'monthly' ? color : 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer'
-              }}>Mensuel</button>
-              <button onClick={() => setPlan('annual')} style={{
-                flex: 1, padding: '8px', borderRadius: 10, border: `1px solid ${plan === 'annual' ? color : 'rgba(255,255,255,0.1)'}`,
-                background: plan === 'annual' ? color + '15' : 'transparent',
-                color: plan === 'annual' ? color : 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer'
-              }}>Annuel −48%</button>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setPlan("monthly")} style={{ flex: 1, padding: "8px", borderRadius: 10, border: `1px solid ${plan === "monthly" ? color : "rgba(255,255,255,0.1)"}`, background: plan === "monthly" ? color + "15" : "transparent", color: plan === "monthly" ? color : "rgba(255,255,255,0.4)", fontSize: 12, cursor: "pointer" }}>Mensuel</button>
+              <button onClick={() => setPlan("annual")} style={{ flex: 1, padding: "8px", borderRadius: 10, border: `1px solid ${plan === "annual" ? color : "rgba(255,255,255,0.1)"}`, background: plan === "annual" ? color + "15" : "transparent", color: plan === "annual" ? color : "rgba(255,255,255,0.4)", fontSize: 12, cursor: "pointer" }}>Annuel −48%</button>
             </div>
           </div>
-          <Row icon="📄" label="Historique de facturation" onClick={() => {}} last={false} />
+          <Row icon="📄" label="Historique de facturation" onClick={() => setShowBilling(true)} />
           <Row icon="🔴" label="Annuler l'abonnement" onClick={() => setShowCancel(true)} danger last />
         </Section>
 
-        {/* Notifications */}
         <Section title="Notifications">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '15px 18px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-            <span style={{ fontSize: 17, width: 22, textAlign: 'center' }}>🔔</span>
-            <span style={{ flex: 1, fontSize: 14, color: 'rgba(255,255,255,0.8)' }}>Notifications push</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+            <span style={{ fontSize: 17, width: 22, textAlign: "center" }}>🔔</span>
+            <span style={{ flex: 1, fontSize: 14, color: "rgba(255,255,255,0.8)" }}>Notifications push</span>
             <Toggle value={notifs} onChange={setNotifs} />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '15px 18px' }}>
-            <span style={{ fontSize: 17, width: 22, textAlign: 'center' }}>⏰</span>
-            <span style={{ flex: 1, fontSize: 14, color: 'rgba(255,255,255,0.8)' }}>Rappels quotidiens</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px" }}>
+            <span style={{ fontSize: 17, width: 22, textAlign: "center" }}>⏰</span>
+            <span style={{ flex: 1, fontSize: 14, color: "rgba(255,255,255,0.8)" }}>Rappels quotidiens</span>
             <Toggle value={reminders} onChange={setReminders} />
           </div>
         </Section>
 
-        {/* App info */}
         <Section title="Application">
-          <Row icon="🔁" label="Refaire le test" onClick={() => setPage('test')} />
-          <Row icon="🌿" label="À propos d'ImpulsStop" onClick={() => {}} />
-          <Row icon="🔒" label="Politique de confidentialité" onClick={() => {}} />
-          <Row icon="⭐" label="Noter l'application" onClick={() => {}} last />
+          <Row icon="🔁" label="Refaire le test" onClick={() => setPage("test")} />
+          <Row icon="🌿" label="À propos d'ImpulsStop" onClick={() => setShowAbout(true)} />
+          <Row icon="🔒" label="Politique de confidentialité" onClick={() => setShowPrivacy(true)} />
+          <Row icon="⭐" label="Noter l'application" onClick={() => setShowRate(true)} last />
         </Section>
 
-        {/* Logout */}
         <Section title="Compte">
           <Row icon="🚪" label="Se déconnecter" onClick={() => setShowLogout(true)} danger last />
         </Section>
 
-        <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.15)', fontSize: 11, marginTop: 8 }}>
-          ImpulsStop v3.0 · Fait avec 🌿 pour reprendre le contrôle
-        </p>
+        <p style={{ textAlign: "center", color: "rgba(255,255,255,0.15)", fontSize: 11, marginTop: 8 }}>ImpulsStop v1.0 · Fait avec 🌿 par Mathis Bobo</p>
       </div>
 
       {/* Logout confirm */}
       {showLogout && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100, padding: '0 16px 32px' }}>
-          <div className="scale-in" style={{ width: '100%', maxWidth: 400, background: '#1A1A1A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 24, padding: 24 }}>
-            <p style={{ fontFamily: 'Cormorant Garamond', fontSize: 24, fontWeight: 400, color: '#F0EDE8', marginBottom: 8 }}>Se déconnecter ?</p>
-            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, marginBottom: 24, lineHeight: 1.6 }}>Tes données locales seront conservées. Tu pourras te reconnecter à tout moment.</p>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setShowLogout(false)} className="btn-ghost" style={{ flex: 1, padding: '14px' }}>Annuler</button>
-              <button onClick={() => { setPremium(false); setPage('home'); setShowLogout(false); }} style={{ flex: 1, padding: '14px', background: '#E09080', border: 'none', borderRadius: 100, color: 'white', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>Déconnecter</button>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 100, padding: "0 16px 32px" }}>
+          <div className="scale-in" style={{ width: "100%", maxWidth: 400, background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 24, padding: 24 }}>
+            <p style={{ fontFamily: "Cormorant Garamond", fontSize: 26, fontWeight: 400, color: "#F0EDE8", marginBottom: 8 }}>Se déconnecter ?</p>
+            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 24, lineHeight: 1.6 }}>Tes données locales seront conservées. Tu pourras te reconnecter à tout moment.</p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setShowLogout(false)} className="btn-ghost" style={{ flex: 1, padding: "14px" }}>Annuler</button>
+              <button onClick={() => { setPremium(false); setPage("home"); setShowLogout(false); }} style={{ flex: 1, padding: "14px", background: "#E09080", border: "none", borderRadius: 100, color: "white", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>Déconnecter</button>
             </div>
           </div>
         </div>
@@ -1179,17 +1324,48 @@ function Profile({ score, streak, totalSaved, setPremium, setPage }) {
 
       {/* Cancel confirm */}
       {showCancel && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100, padding: '0 16px 32px' }}>
-          <div className="scale-in" style={{ width: '100%', maxWidth: 400, background: '#1A1A1A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 24, padding: 24 }}>
-            <p style={{ fontFamily: 'Cormorant Garamond', fontSize: 24, fontWeight: 400, color: '#F0EDE8', marginBottom: 8 }}>Annuler l'abonnement ?</p>
-            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, marginBottom: 20, lineHeight: 1.6 }}>Tu perdras l'accès à toutes les fonctionnalités Premium à la fin de ta période en cours.</p>
-            <div style={{ background: 'rgba(156,175,136,0.08)', border: '1px solid rgba(156,175,136,0.2)', borderRadius: 14, padding: '12px 16px', marginBottom: 20 }}>
-              <p style={{ color: '#9CAF88', fontSize: 13, margin: 0, lineHeight: 1.5 }}>💡 Tu peux mettre en pause ton abonnement au lieu de l'annuler.</p>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 100, padding: "0 16px 32px" }}>
+          <div className="scale-in" style={{ width: "100%", maxWidth: 400, background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 24, padding: 24 }}>
+            <p style={{ fontFamily: "Cormorant Garamond", fontSize: 26, fontWeight: 400, color: "#F0EDE8", marginBottom: 8 }}>Annuler l'abonnement ?</p>
+            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 20, lineHeight: 1.6 }}>Tu perdras l'accès aux fonctionnalités Premium à la fin de ta période en cours.</p>
+            <div style={{ background: "rgba(156,175,136,0.08)", border: "1px solid rgba(156,175,136,0.2)", borderRadius: 14, padding: "12px 16px", marginBottom: 20 }}>
+              <p style={{ color: "#9CAF88", fontSize: 13, margin: 0, lineHeight: 1.5 }}>💡 Tu peux mettre en pause ton abonnement au lieu de l'annuler.</p>
             </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setShowCancel(false)} className="btn-ghost" style={{ flex: 1, padding: '14px' }}>Garder Premium</button>
-              <button onClick={() => setShowCancel(false)} style={{ flex: 1, padding: '14px', background: 'rgba(224,144,128,0.15)', border: '1px solid rgba(224,144,128,0.3)', borderRadius: 100, color: '#E09080', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Confirmer</button>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setShowCancel(false)} className="btn-ghost" style={{ flex: 1, padding: "14px" }}>Garder Premium</button>
+              <button onClick={() => setShowCancel(false)} style={{ flex: 1, padding: "14px", background: "rgba(224,144,128,0.15)", border: "1px solid rgba(224,144,128,0.3)", borderRadius: 100, color: "#E09080", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Confirmer</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showRate && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 200, padding: "0 16px 32px" }}>
+          <div className="scale-in" style={{ width: "100%", maxWidth: 400, background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 28, padding: "28px 24px", textAlign: "center" }}>
+            {!rated ? (
+              <>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>🌿</div>
+                <p style={{ fontFamily: "Cormorant Garamond", fontSize: 26, fontWeight: 400, color: "#F0EDE8", margin: "0 0 6px" }}>Tu aimes ImpulsStop ?</p>
+                <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 24, lineHeight: 1.6 }}>Ton avis nous aide énormément et aide d'autres personnes à découvrir l'app.</p>
+                <div style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 28 }}>
+                  {[1,2,3,4,5].map(s => (
+                    <span key={s} onMouseEnter={() => setHoverStar(s)} onMouseLeave={() => setHoverStar(0)} onClick={() => setStars(s)}
+                      style={{ fontSize: 40, cursor: "pointer", transition: "transform 0.15s", transform: (hoverStar || stars) >= s ? "scale(1.2)" : "scale(1)", filter: (hoverStar || stars) >= s ? "none" : "grayscale(1) opacity(0.4)" }}>⭐</span>
+                  ))}
+                </div>
+                <button onClick={() => { if (stars > 0) setRated(true); }} style={{ width: "100%", padding: "16px", background: stars > 0 ? "#9CAF88" : "rgba(255,255,255,0.08)", border: "none", borderRadius: 100, color: stars > 0 ? "#0D0D0D" : "rgba(255,255,255,0.3)", fontFamily: "DM Sans", fontWeight: 700, fontSize: 15, cursor: stars > 0 ? "pointer" : "not-allowed", marginBottom: 10, transition: "all 0.2s" }}>
+                  Envoyer {stars > 0 ? `(${stars}★)` : ""}
+                </button>
+                <button onClick={() => setShowRate(false)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)", fontSize: 13, cursor: "pointer" }}>Plus tard</button>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 56, marginBottom: 16 }}>🎉</div>
+                <p style={{ fontFamily: "Cormorant Garamond", fontSize: 26, fontWeight: 400, color: "#F0EDE8", margin: "0 0 10px" }}>Merci !</p>
+                <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>Ton avis {stars}★ nous aide énormément 🌿</p>
+                <button onClick={() => { setShowRate(false); setRated(false); setStars(0); }} className="btn-primary" style={{ width: "100%", padding: "16px", fontSize: 15 }}>Fermer</button>
+              </>
+            )}
           </div>
         </div>
       )}
