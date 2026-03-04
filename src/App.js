@@ -520,121 +520,312 @@ function Paywall({ setPage, setPremium }) {
 // ─── PAUSE ────────────────────────────────────────────────────────────────────
 function Pause({ addSavings }) {
   const [step, setStep] = useState(0);
+  const [answers, setAnswers] = useState({});
   const [amount, setAmount] = useState("");
-  const [timer, setTimer] = useState(86400);
   const [pressed, setPressed] = useState(false);
+  const [outcome, setOutcome] = useState(null); // "resist" | "confirm" | "savings"
+  const [confirmStep, setConfirmStep] = useState(0);
 
-  useEffect(() => {
-    let interval;
-    if (step === 4) interval = setInterval(() => setTimer(t => Math.max(0, t - 1)), 1000);
-    return () => clearInterval(interval);
-  }, [step]);
+  // Logique intelligente basée sur les réponses
+  const analyzeAnswers = (newAnswers) => {
+    const emotion = newAnswers.emotion;   // 0=Bien, 1=Stressé, 2=Triste, 3=Ennuyé
+    const need3d  = newAnswers.need3d;    // 0=Oui sûrement, 1=Probablement pas, 2=Je sais pas
+    const impulse = newAnswers.impulse;   // 0=Envie moment, 1=Vrai besoin, 2=Un peu des deux
 
-  const formatTime = (s) => `${String(Math.floor(s / 3600)).padStart(2, "0")}:${String(Math.floor((s % 3600) / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+    // Si état émotionnel négatif + pas besoin dans 3j + envie du moment → clairement impulsif
+    if (emotion >= 1 && need3d >= 1 && impulse === 0) return "resist_clear";
+    // Si état négatif + incertain → probablement impulsif
+    if (emotion >= 1 && (need3d >= 1 || impulse === 0)) return "resist_likely";
+    // Si vrai besoin affirmé → continuer à questionner
+    if (impulse === 1 && need3d === 0) return "confirm";
+    // Sinon doute → questionner encore
+    return "confirm";
+  };
 
-  const pauseQs = [
-    { q: "Comment tu te sens en ce moment ?", opts: ["😊 Bien", "😰 Stressé(e)", "😢 Triste", "😑 Ennuyé(e)"] },
-    { q: "T'en auras encore besoin dans 3 jours ?", opts: ["Oui, sûrement", "Probablement pas", "Je sais pas vraiment"] },
-    { q: "C'est une envie ou un vrai besoin ?", opts: ["Une envie du moment", "Un vrai besoin", "Un peu des deux"] },
+  const emotionLabels = ["😊 Tu te sens bien", "😰 Tu es stressé(e)", "😢 Tu es triste", "😑 Tu t'ennuies"];
+  const emotionInsights = [
+    "Bonne nouvelle, tu es dans un état calme. Mais réfléchis quand même — est-ce vraiment nécessaire ?",
+    "Le stress pousse souvent à acheter pour se soulager. C'est une réponse automatique du cerveau, pas un vrai besoin.",
+    "La tristesse crée une envie de récompense immédiate. Mais l'effet ne dure que quelques minutes — puis le vide revient.",
+    "L'ennui est le déclencheur n°1 des achats impulsifs. Ton cerveau cherche de la stimulation, pas cet article.",
   ];
 
-  if (step === 0) return (
-    <div style={{ minHeight: '100vh', background: '#0D0D0D', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 24px 80px', textAlign: 'center' }}>
-      <div style={{ position: 'absolute', top: '35%', left: '50%', transform: 'translate(-50%,-50%)', width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(156,175,136,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
+  // Questions de confirmation supplémentaires (si vrai besoin)
+  const confirmQuestions = [
+    { q: "Tu possèdes déjà quelque chose de similaire ?", opts: ["Non, rien de tel", "Oui, mais moins bien", "Oui, presque pareil"] },
+    { q: "Tu avais prévu cet achat avant aujourd'hui ?", opts: ["Oui, ça fait un moment", "Non, c'est spontané", "Vaguement prévu"] },
+    { q: "Quel impact sur ton budget ce mois-ci ?", opts: ["Aucun, j'ai prévu", "Ça se remarquera un peu", "Ça va me serrer"] },
+    { q: "Si tu attends encore 48h, tu regretteras de ne pas l'avoir acheté ?", opts: ["Oui, vraiment", "Probablement pas", "Je sais pas"] },
+    { q: "Est-ce que ça répond à un besoin précis dans ta vie ?", opts: ["Oui, besoin concret", "C'est plutôt une envie", "Les deux un peu"] },
+  ];
 
-      <div className="fade-up-1" style={{ marginBottom: 12 }}>
-        <span style={{ fontFamily: 'DM Sans', fontSize: 11, letterSpacing: 4, color: '#9CAF88', opacity: 0.7 }}>ANTI-IMPULSION</span>
-      </div>
-      <h2 className="fade-up-2" style={{ fontSize: 24, fontWeight: 600, color: '#F0EDE8', marginBottom: 12, lineHeight: 1.3 }}>
-        Tu as envie d'acheter quelque chose ?
-      </h2>
-      <p className="fade-up-3" style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, marginBottom: 52, maxWidth: 260 }}>
-        Avant de cliquer "Acheter", appuie sur le bouton ci-dessous.
-      </p>
+  const computeConfirmScore = (cAnswers) => {
+    let score = 0;
+    // Q1: pas de similaire = +2, moins bien = +1, pareil = 0
+    if (cAnswers[0] === 0) score += 2; else if (cAnswers[0] === 1) score += 1;
+    // Q2: prévu depuis longtemps = +2, vaguement = +1, spontané = 0
+    if (cAnswers[1] === 0) score += 2; else if (cAnswers[1] === 2) score += 1;
+    // Q3: aucun impact = +2, un peu = +1, serrer = 0
+    if (cAnswers[2] === 0) score += 2; else if (cAnswers[2] === 1) score += 1;
+    // Q4: oui regret = +2, probablement pas = 0, sais pas = +1
+    if (cAnswers[3] === 0) score += 2; else if (cAnswers[3] === 2) score += 1;
+    // Q5: besoin concret = +2, les deux = +1, envie = 0
+    if (cAnswers[4] === 0) score += 2; else if (cAnswers[4] === 2) score += 1;
+    return score; // max 10
+  };
 
-      <button
-        className="fade-up-4"
-        onClick={() => { setPressed(true); setTimeout(() => { setStep(1); setPressed(false); }, 400); }}
-        style={{
-          width: 160, height: 160, borderRadius: '50%',
-          background: pressed ? '#7D9B6A' : 'transparent',
-          border: '2px solid rgba(156,175,136,0.4)',
-          fontSize: 40, cursor: 'pointer',
-          transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-          transform: pressed ? 'scale(0.92)' : 'scale(1)',
-          boxShadow: '0 0 40px rgba(156,175,136,0.15)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center'
-        }}
-      >
-        ⏸
-      </button>
-      <p className="fade-up-5" style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12, marginTop: 20 }}>Appuie pour lancer la pause</p>
+  const Wrapper = ({ children }) => (
+    <div style={{ minHeight: "100vh", background: "#0D0D0D", padding: "40px 24px 100px", display: "flex", flexDirection: "column" }} className="fade-in">
+      {children}
     </div>
   );
 
-  if (step >= 1 && step <= 3) {
-    const q = pauseQs[step - 1];
+  const Header = ({ current, total, label }) => (
+    <div style={{ marginBottom: 28 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+        <span style={{ fontFamily: "DM Sans", fontSize: 11, letterSpacing: 3, color: "#9CAF88", opacity: 0.7, textTransform: "uppercase" }}>{label}</span>
+        <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 12 }}>{current}/{total}</span>
+      </div>
+      <div className="progress-bar"><div className="progress-fill" style={{ width: `${(current/total)*100}%` }} /></div>
+    </div>
+  );
+
+  // ── Écran d'accueil
+  if (step === 0) return (
+    <div style={{ minHeight: "100vh", background: "#0D0D0D", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "0 24px 80px", textAlign: "center" }}>
+      <div style={{ position: "absolute", top: "35%", left: "50%", transform: "translate(-50%,-50%)", width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(156,175,136,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
+      <div className="fade-up-1" style={{ marginBottom: 12 }}>
+        <span style={{ fontFamily: "DM Sans", fontSize: 11, letterSpacing: 4, color: "#9CAF88", opacity: 0.7 }}>ANTI-IMPULSION</span>
+      </div>
+      <h2 className="fade-up-2" style={{ fontFamily: "Cormorant Garamond", fontSize: 34, fontWeight: 300, fontStyle: "italic", color: "#F0EDE8", marginBottom: 12, lineHeight: 1.3 }}>
+        Tu as envie d'acheter quelque chose ?
+      </h2>
+      <p className="fade-up-3" style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 52, maxWidth: 260, lineHeight: 1.7 }}>
+        Prends 2 minutes avant d'acheter. Ton futur toi te remerciera.
+      </p>
+      <button className="fade-up-4" onClick={() => { setPressed(true); setTimeout(() => { setStep(1); setPressed(false); }, 400); }} style={{ width: 160, height: 160, borderRadius: "50%", background: pressed ? "#7D9B6A" : "transparent", border: "2px solid rgba(156,175,136,0.4)", fontSize: 40, cursor: "pointer", transition: "all 0.3s cubic-bezier(0.16,1,0.3,1)", transform: pressed ? "scale(0.92)" : "scale(1)", boxShadow: "0 0 40px rgba(156,175,136,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        ⏸
+      </button>
+      <p className="fade-up-5" style={{ color: "rgba(255,255,255,0.2)", fontSize: 12, marginTop: 20 }}>Appuie pour lancer la pause</p>
+    </div>
+  );
+
+  // ── Q1 : Émotion
+  if (step === 1) return (
+    <Wrapper>
+      <Header current={1} total={3} label="Pause intelligente" />
+      <h2 style={{ fontFamily: "Cormorant Garamond", fontSize: 28, fontWeight: 400, color: "#F0EDE8", marginBottom: 8, lineHeight: 1.3 }}>Comment tu te sens en ce moment ?</h2>
+      <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 13, marginBottom: 24, lineHeight: 1.6 }}>Sois honnête avec toi-même. Personne ne voit ta réponse.</p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {["😊  Je me sens bien", "😰  Je suis stressé(e)", "😢  Je suis triste", "😑  Je m'ennuie"].map((opt, i) => (
+          <div key={i} className="option-card" onClick={() => { setAnswers(a => ({ ...a, emotion: i })); setTimeout(() => setStep(2), 250); }} style={{ padding: "16px 20px" }}>
+            <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 15 }}>{opt}</span>
+          </div>
+        ))}
+      </div>
+    </Wrapper>
+  );
+
+  // ── Q2 : Besoin dans 3 jours
+  if (step === 2) return (
+    <Wrapper>
+      <Header current={2} total={3} label="Pause intelligente" />
+      <h2 style={{ fontFamily: "Cormorant Garamond", fontSize: 28, fontWeight: 400, color: "#F0EDE8", marginBottom: 8, lineHeight: 1.3 }}>T'en auras encore besoin dans 3 jours ?</h2>
+      <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 13, marginBottom: 24, lineHeight: 1.6 }}>Ferme les yeux et imagine ta vie dans 72 heures.</p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {["✅  Oui, sûrement", "❌  Probablement pas", "🤔  Je sais pas vraiment"].map((opt, i) => (
+          <div key={i} className="option-card" onClick={() => { setAnswers(a => ({ ...a, need3d: i })); setTimeout(() => setStep(3), 250); }} style={{ padding: "16px 20px" }}>
+            <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 15 }}>{opt}</span>
+          </div>
+        ))}
+      </div>
+    </Wrapper>
+  );
+
+  // ── Q3 : Envie ou besoin
+  if (step === 3) return (
+    <Wrapper>
+      <Header current={3} total={3} label="Pause intelligente" />
+      <h2 style={{ fontFamily: "Cormorant Garamond", fontSize: 28, fontWeight: 400, color: "#F0EDE8", marginBottom: 8, lineHeight: 1.3 }}>C'est une envie ou un vrai besoin ?</h2>
+      <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 13, marginBottom: 24, lineHeight: 1.6 }}>Sois honnête — il n'y a pas de mauvaise réponse.</p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {["💫  Une envie du moment", "🎯  Un vrai besoin", "🌗  Un peu des deux"].map((opt, i) => (
+          <div key={i} className="option-card" onClick={() => {
+            const newAnswers = { ...answers, impulse: i };
+            setAnswers(newAnswers);
+            const result = analyzeAnswers(newAnswers);
+            setTimeout(() => {
+              if (result === "resist_clear" || result === "resist_likely") {
+                setOutcome(result); setStep("resist");
+              } else {
+                setOutcome("confirm"); setStep("confirm"); setConfirmStep(0);
+              }
+            }, 250);
+          }} style={{ padding: "16px 20px" }}>
+            <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 15 }}>{opt}</span>
+          </div>
+        ))}
+      </div>
+    </Wrapper>
+  );
+
+  // ── Résultat : RÉSISTE — achat impulsif détecté
+  if (step === "resist") {
+    const emotionIdx = answers.emotion || 0;
+    const isClear = outcome === "resist_clear";
     return (
-      <div style={{ minHeight: '100vh', background: '#0D0D0D', padding: '40px 24px 100px', display: 'flex', flexDirection: 'column' }} className="fade-in">
-        <div style={{ marginBottom: 32 }}>
-          <div className="progress-bar">
-            <div className="progress-fill" style={{ width: `${(step / 3) * 100}%` }} />
+      <div style={{ minHeight: "100vh", background: "#0D0D0D", padding: "48px 24px 100px", display: "flex", flexDirection: "column" }} className="fade-in">
+        <div style={{ flex: 1 }}>
+          {/* Résultat visuel */}
+          <div style={{ textAlign: "center", marginBottom: 32 }}>
+            <div style={{ width: 80, height: 80, borderRadius: "50%", background: "rgba(156,175,136,0.1)", border: "1px solid rgba(156,175,136,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, margin: "0 auto 20px", animation: "breathe 3s ease-in-out infinite" }}>
+              🌿
+            </div>
+            <p style={{ fontFamily: "DM Sans", fontSize: 11, letterSpacing: 3, color: "#9CAF88", textTransform: "uppercase", marginBottom: 12 }}>
+              {isClear ? "Pulsion détectée" : "Signal d'alerte"}
+            </p>
+            <h2 style={{ fontFamily: "Cormorant Garamond", fontSize: 34, fontWeight: 300, fontStyle: "italic", color: "#F0EDE8", lineHeight: 1.3, marginBottom: 0 }}>
+              {isClear ? "C'est une pulsion, pas un besoin." : "Ton cerveau te joue un tour."}
+            </h2>
+          </div>
+
+          {/* Explication de la pulsion */}
+          <div style={{ background: "rgba(156,175,136,0.06)", border: "1px solid rgba(156,175,136,0.18)", borderRadius: 20, padding: "20px", marginBottom: 16 }}>
+            <p style={{ color: "#9CAF88", fontSize: 12, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", margin: "0 0 10px" }}>
+              Ce qui se passe en toi
+            </p>
+            <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, lineHeight: 1.8, margin: 0 }}>
+              {emotionInsights[emotionIdx]}
+            </p>
+          </div>
+
+          {/* Ce que tu ressens vraiment */}
+          <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "20px", marginBottom: 16 }}>
+            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", margin: "0 0 10px" }}>
+              Ce que tu ressens vraiment
+            </p>
+            <p style={{ color: "rgba(255,255,255,0.65)", fontSize: 14, lineHeight: 1.8, margin: 0 }}>
+              {answers.emotion === 0 && "Même quand on se sent bien, l'habitude d'acheter peut prendre le dessus. Remarque cette envie sans agir dessus — c'est déjà une victoire."}
+              {answers.emotion === 1 && "Quand on est stressé, le cerveau cherche une récompense rapide. L'achat donne une illusion de contrôle. Mais dans 30 minutes, le stress sera toujours là."}
+              {answers.emotion === 2 && "La tristesse crée un vide que l'on essaie de remplir. C'est humain. Mais cet article ne pourra pas combler ce que tu ressens vraiment."}
+              {answers.emotion === 3 && "L'ennui est le plus grand déclencheur d'achats impulsifs. Ton cerveau a juste besoin de stimulation — pas forcément de cet article."}
+            </p>
+          </div>
+
+          {/* Citation science */}
+          <div style={{ background: "rgba(184,212,200,0.06)", border: "1px solid rgba(184,212,200,0.15)", borderRadius: 16, padding: "14px 16px", marginBottom: 28 }}>
+            <p style={{ color: "rgba(184,212,200,0.8)", fontSize: 12, lineHeight: 1.6, margin: 0, fontStyle: "italic" }}>
+              🧠 "Attendre crée un espace entre l'envie et l'action. Dans cet espace réside ta liberté." — Dr. Judson Brewer, Brown University
+            </p>
           </div>
         </div>
-        <span style={{ fontFamily: 'DM Sans', fontSize: 11, letterSpacing: 3, color: '#9CAF88', opacity: 0.7, marginBottom: 12, display: 'block' }}>
-          QUESTION {step}/3
-        </span>
-        <h2 style={{ fontSize: 22, fontWeight: 600, color: '#F0EDE8', marginBottom: 32, lineHeight: 1.4 }}>{q.q}</h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {q.opts.map((opt, i) => (
-            <div key={i} className="option-card" onClick={() => setTimeout(() => setStep(step === 3 ? 4 : step + 1), 200)}
-              style={{ padding: '16px 20px' }}>
-              <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 15 }}>{opt}</span>
-            </div>
-          ))}
-        </div>
+
+        {/* Actions */}
+        <button onClick={() => { setOutcome("savings"); setStep("savings"); }} className="btn-primary" style={{ width: "100%", padding: "18px 0", fontSize: 16, marginBottom: 10 }}>
+          J'ai résisté ! Enregistrer mes économies 💰
+        </button>
+        <button onClick={() => setStep(0)} style={{ width: "100%", padding: "14px", background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 100, color: "rgba(255,255,255,0.4)", fontSize: 14, cursor: "pointer" }}>
+          Recommencer
+        </button>
+        <style>{`@keyframes breathe { 0%,100%{transform:scale(1);opacity:0.7;} 50%{transform:scale(1.06);opacity:1;} }`}</style>
       </div>
     );
   }
 
-  if (step === 4) return (
-    <div style={{ minHeight: '100vh', background: '#0D0D0D', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 24px 80px', textAlign: 'center' }} className="fade-in">
-      <div style={{ fontSize: 48, marginBottom: 16 }}>⏳</div>
-      <span style={{ fontFamily: 'DM Sans', fontSize: 11, letterSpacing: 4, color: '#9CAF88', opacity: 0.7, marginBottom: 12, display: 'block' }}>TIMER ACTIF</span>
-      <h2 style={{ fontSize: 24, fontWeight: 600, color: '#F0EDE8', marginBottom: 8 }}>Attends 24 heures</h2>
-      <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, marginBottom: 36, maxWidth: 260 }}>
-        Si tu y penses encore, c'est peut-être un vrai besoin.
-      </p>
-      <div className="glass" style={{ borderRadius: 20, padding: '24px 40px', marginBottom: 32 }}>
-        <div style={{ fontFamily: 'Cormorant Garamond', fontSize: 52, fontWeight: 500, color: '#9CAF88', letterSpacing: 4 }}>{formatTime(timer)}</div>
+  // ── Flow de confirmation : questions approfondies
+  if (step === "confirm") {
+    const cAnswers = answers.confirmAnswers || {};
+    const totalAnswered = Object.keys(cAnswers).length;
+
+    // Si toutes les questions répondues → calculer score
+    if (totalAnswered >= confirmQuestions.length) {
+      const score = computeConfirmScore(Object.values(cAnswers));
+      // Score >= 7 sur 10 → achat validé
+      if (score >= 7) return (
+        <div style={{ minHeight: "100vh", background: "#0D0D0D", padding: "48px 24px 100px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }} className="fade-in">
+          <div style={{ fontSize: 56, marginBottom: 20 }}>✅</div>
+          <p style={{ fontFamily: "DM Sans", fontSize: 11, letterSpacing: 3, color: "#9CAF88", textTransform: "uppercase", marginBottom: 16 }}>Achat validé</p>
+          <h2 style={{ fontFamily: "Cormorant Garamond", fontSize: 32, fontWeight: 300, color: "#F0EDE8", lineHeight: 1.3, marginBottom: 16 }}>
+            C'est un vrai besoin.
+          </h2>
+          <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 14, lineHeight: 1.8, maxWidth: 280, marginBottom: 32 }}>
+            Tu as pris le temps de réfléchir — c'est exactement ce que ImpulsStop t'encourage à faire. Cet achat est conscient et réfléchi. 🌿
+          </p>
+          <button onClick={() => setStep(0)} className="btn-primary" style={{ width: "100%", maxWidth: 320, padding: "18px 0", fontSize: 16 }}>
+            Retour à l'accueil
+          </button>
+        </div>
+      );
+
+      // Score < 7 → orienter vers résistance
+      return (
+        <div style={{ minHeight: "100vh", background: "#0D0D0D", padding: "48px 24px 100px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }} className="fade-in">
+          <div style={{ fontSize: 56, marginBottom: 20 }}>🤔</div>
+          <p style={{ fontFamily: "DM Sans", fontSize: 11, letterSpacing: 3, color: "#E8C4A0", textTransform: "uppercase", marginBottom: 16 }}>Résultat mitigé</p>
+          <h2 style={{ fontFamily: "Cormorant Garamond", fontSize: 32, fontWeight: 300, color: "#F0EDE8", lineHeight: 1.3, marginBottom: 16 }}>
+            Quelques doutes subsistent.
+          </h2>
+          <div style={{ background: "rgba(232,196,160,0.08)", border: "1px solid rgba(232,196,160,0.2)", borderRadius: 20, padding: "20px", marginBottom: 28, textAlign: "left" }}>
+            <p style={{ color: "rgba(232,196,160,0.8)", fontSize: 13, lineHeight: 1.8, margin: 0 }}>
+              Tes réponses montrent que ce n'est pas tout à fait un besoin évident. Donne-toi encore 48h. Si dans 2 jours l'envie est toujours là et aussi forte, ce sera peut-être un vrai besoin.
+            </p>
+          </div>
+          <button onClick={() => { setOutcome("savings"); setStep("savings"); }} className="btn-primary" style={{ width: "100%", maxWidth: 320, padding: "18px 0", fontSize: 16, marginBottom: 10 }}>
+            J'attends — noter mes économies potentielles 💰
+          </button>
+          <button onClick={() => setStep(0)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)", fontSize: 14, cursor: "pointer" }}>Retour</button>
+        </div>
+      );
+    }
+
+    // Afficher la question de confirmation courante
+    const q = confirmQuestions[totalAnswered];
+    return (
+      <Wrapper>
+        <Header current={totalAnswered + 1} total={confirmQuestions.length} label="Vérification approfondie" />
+        <div style={{ background: "rgba(156,175,136,0.06)", border: "1px solid rgba(156,175,136,0.15)", borderRadius: 14, padding: "12px 16px", marginBottom: 24, display: "flex", gap: 10 }}>
+          <span>🎯</span>
+          <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, lineHeight: 1.6, margin: 0, fontStyle: "italic" }}>
+            Tu penses que c'est un vrai besoin — prenons le temps de vérifier ensemble.
+          </p>
+        </div>
+        <h2 style={{ fontFamily: "Cormorant Garamond", fontSize: 28, fontWeight: 400, color: "#F0EDE8", marginBottom: 28, lineHeight: 1.4 }}>{q.q}</h2>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {q.opts.map((opt, i) => (
+            <div key={i} className="option-card" onClick={() => {
+              const newCAnswers = { ...cAnswers, [totalAnswered]: i };
+              setAnswers(a => ({ ...a, confirmAnswers: newCAnswers }));
+            }} style={{ padding: "16px 20px" }}>
+              <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 15 }}>{opt}</span>
+            </div>
+          ))}
+        </div>
+      </Wrapper>
+    );
+  }
+
+  // ── Écran économies
+  if (step === "savings") return (
+    <div style={{ minHeight: "100vh", background: "#0D0D0D", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "0 24px 100px", textAlign: "center" }} className="fade-in">
+      <div style={{ fontSize: 48, marginBottom: 16 }}>💰</div>
+      <h2 style={{ fontFamily: "Cormorant Garamond", fontSize: 30, fontWeight: 300, color: "#F0EDE8", marginBottom: 8 }}>Combien allais-tu dépenser ?</h2>
+      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 28, lineHeight: 1.6 }}>On ajoute ça à ton total d'économies.</p>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24, width: "100%", maxWidth: 200 }}>
+        <input type="number" placeholder="0" value={amount} onChange={e => setAmount(e.target.value)}
+          style={{ flex: 1, padding: "16px 20px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, color: "#F0EDE8", fontSize: 32, fontFamily: "Cormorant Garamond", textAlign: "center", outline: "none", width: "100%" }} />
+        <span style={{ color: "#9CAF88", fontSize: 28, fontFamily: "Cormorant Garamond" }}>€</span>
       </div>
-      <button onClick={() => setStep(5)} style={{ background: 'none', border: 'none', color: '#9CAF88', fontSize: 14, cursor: 'pointer', textDecoration: 'underline' }}>
-        J'ai résisté ! Enregistrer mes économies
+      <button className="btn-primary" onClick={() => { if (amount) { addSavings(parseFloat(amount)); launchConfetti(); setStep(0); setAnswers({}); setAmount(""); } }}
+        style={{ width: "100%", maxWidth: 320, padding: "18px 0", fontSize: 15 }}>
+        Ajouter à mes économies 🎉
+      </button>
+      <button onClick={() => { setStep(0); setAnswers({}); }} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)", fontSize: 13, cursor: "pointer", marginTop: 12 }}>
+        Passer
       </button>
     </div>
   );
 
-  return (
-    <div style={{ minHeight: '100vh', background: '#0D0D0D', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 24px 80px', textAlign: 'center' }} className="fade-in">
-      <div style={{ fontSize: 48, marginBottom: 16 }}>💰</div>
-      <h2 style={{ fontSize: 24, fontWeight: 600, color: '#F0EDE8', marginBottom: 8 }}>Combien allais-tu dépenser ?</h2>
-      <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, marginBottom: 28 }}>On va ajouter ça à tes économies.</p>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24, width: '100%', maxWidth: 240 }}>
-        <input type="number" placeholder="0" value={amount} onChange={e => setAmount(e.target.value)}
-          style={{
-            flex: 1, padding: '16px 20px', background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16,
-            color: '#F0EDE8', fontSize: 28, fontFamily: 'Bebas Neue', letterSpacing: 2,
-            textAlign: 'center', outline: 'none', width: '100%'
-          }} />
-        <span style={{ color: '#9CAF88', fontSize: 24, fontFamily: 'Bebas Neue' }}>€</span>
-      </div>
-      <button className="btn-primary" onClick={() => { if (amount) { addSavings(parseFloat(amount)); launchConfetti(); setStep(0); setAmount(""); } }}
-        style={{ width: '100%', maxWidth: 320, padding: '18px 0', fontSize: 15 }}>
-        Ajouter à mes économies 🎉
-      </button>
-    </div>
-  );
+  return null;
 }
 
 // ─── PLAN ─────────────────────────────────────────────────────────────────────
