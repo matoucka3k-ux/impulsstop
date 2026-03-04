@@ -311,7 +311,7 @@ function Results({ score, setPage, onShare }) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    setTimeout(() => { setVisible(true); launchConfetti(); }, 300);
+    setTimeout(() => { setVisible(true); }, 300);
   }, []);
 
   return (
@@ -1078,94 +1078,238 @@ function Streak({ streak, setStreak, totalSaved, addSavings }) {
 // ─── GOALS ────────────────────────────────────────────────────────────────────
 function Goals({ totalSaved, allocateSavings }) {
   const [goals, setGoals] = useState([
-    { id: 1, name: "Voyage", emoji: "✈️", target: 500, saved: 0 },
-    { id: 2, name: "Sneakers", emoji: "👟", target: 150, saved: 0 },
-    { id: 3, name: "Console", emoji: "🎮", target: 300, saved: 0 },
+    { id: 1, name: "Voyage",    emoji: "✈️", target: 500,  saved: 87,  color: "#B8D4C8", history: [{ date: "12 Mai",  amount: 45, source: "Pause Zara" }, { date: "3 Mai", amount: 42, source: "Pause Amazon" }] },
+    { id: 2, name: "Sneakers",  emoji: "👟", target: 150,  saved: 32,  color: "#E8C4A0", history: [{ date: "8 Mai",   amount: 32, source: "Pause ASOS" }] },
+    { id: 3, name: "Épargne",   emoji: "🏦", target: 1000, saved: 220, color: "#9CAF88", history: [{ date: "15 Mai", amount: 120, source: "Pause Shein" }, { date: "1 Mai", amount: 100, source: "Alloué manuellement" }] },
   ]);
-  const [showAdd, setShowAdd] = useState(false);
-  const [name, setName] = useState(""); const [target, setTarget] = useState(""); const [emoji, setEmoji] = useState("🎯");
-  const emojis = ["✈️", "👟", "🎮", "🏠", "🎁", "🎓", "🚗", "💻", "🌴", "🎸"];
+  const [showAdd, setShowAdd]         = useState(false);
+  const [showDetail, setShowDetail]   = useState(null); // goal id
+  const [showAlloc, setShowAlloc]     = useState(null); // goal id
+  const [allocAmount, setAllocAmount] = useState("");
+  const [name, setName]               = useState("");
+  const [target, setTarget]           = useState("");
+  const [emoji, setEmoji]             = useState("🎯");
+  const [deleteId, setDeleteId]       = useState(null);
+  const emojis = ["✈️","👟","🎮","🏠","🎁","🎓","🚗","💻","🌴","🎸","🏦","💍","🎨","🐾","🌍"];
 
-  const allocate = (id) => {
-    if (totalSaved <= 0) return;
+  const totalAllocated = goals.reduce((s, g) => s + g.saved, 0);
+  const available = Math.max(0, totalSaved - totalAllocated);
+
+  const allocate = (id, amount) => {
+    const amt = parseFloat(amount);
+    if (!amt || amt <= 0 || amt > available) return;
     setGoals(prev => prev.map(g => {
       if (g.id !== id) return g;
-      const add = Math.min(totalSaved, g.target - g.saved);
-      if (add > 0) { allocateSavings(add); const ns = g.saved + add; if (ns >= g.target) launchConfetti(); return { ...g, saved: ns }; }
-      return g;
+      const add = Math.min(amt, g.target - g.saved);
+      const entry = { date: new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "short" }), amount: add, source: "Alloué manuellement" };
+      return { ...g, saved: g.saved + add, history: [entry, ...g.history] };
     }));
+    allocateSavings(Math.min(amt, goals.find(g => g.id === id).target - goals.find(g => g.id === id).saved));
+    setAllocAmount(""); setShowAlloc(null);
   };
 
   const addGoal = () => {
     if (!name || !target) return;
-    setGoals(prev => [...prev, { id: Date.now(), name, emoji, target: parseFloat(target), saved: 0 }]);
+    const colors = ["#B8D4C8","#E8C4A0","#9CAF88","#D4856A","#B8A8D4"];
+    setGoals(prev => [...prev, { id: Date.now(), name, emoji, target: parseFloat(target), saved: 0, color: colors[prev.length % colors.length], history: [] }]);
     setName(""); setTarget(""); setEmoji("🎯"); setShowAdd(false);
   };
 
-  return (
-    <div style={{ minHeight: '100vh', background: '#0D0D0D', padding: '32px 20px 100px' }}>
-      <span style={{ fontFamily: 'DM Sans', fontSize: 11, letterSpacing: 4, color: '#9CAF88', opacity: 0.7 }}>ÉPARGNE</span>
-      <h2 style={{ fontFamily: 'Cormorant Garamond', fontSize: 40, fontWeight: 500, color: '#F0EDE8', letterSpacing: 2, margin: '4px 0 8px' }}>MES OBJECTIFS</h2>
-      <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, marginBottom: 20 }}>Chaque achat évité te rapproche de ce qui compte vraiment</p>
+  const deleteGoal = (id) => { setGoals(prev => prev.filter(g => g.id !== id)); setDeleteId(null); setShowDetail(null); };
 
-      <div style={{ background: 'linear-gradient(135deg, rgba(156,175,136,0.12), rgba(156,175,136,0.05))', border: '1px solid rgba(156,175,136,0.2)', borderRadius: 20, padding: '16px 20px', marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, margin: '0 0 2px' }}>Économies disponibles</p>
-          <p style={{ fontFamily: 'Cormorant Garamond', fontSize: 40, fontWeight: 500, color: '#9CAF88', letterSpacing: 2, margin: 0 }}>{totalSaved.toFixed(0)}€</p>
+  // ── Détail d'un objectif
+  const detailGoal = goals.find(g => g.id === showDetail);
+  if (detailGoal) {
+    const pct = Math.min(100, Math.round((detailGoal.saved / detailGoal.target) * 100));
+    const remaining = detailGoal.target - detailGoal.saved;
+    const done = pct >= 100;
+    return (
+      <div style={{ minHeight: "100vh", background: "#0D0D0D", padding: "0 0 100px" }}>
+        {/* Header */}
+        <div style={{ padding: "20px 20px 0", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, background: "rgba(13,13,13,0.97)", backdropFilter: "blur(12px)", zIndex: 10, paddingBottom: 16 }}>
+          <button onClick={() => setShowDetail(null)} style={{ background: "rgba(255,255,255,0.07)", border: "none", borderRadius: "50%", width: 36, height: 36, cursor: "pointer", color: "#F0EDE8", fontSize: 18 }}>←</button>
+          <span style={{ fontSize: 24 }}>{detailGoal.emoji}</span>
+          <span style={{ fontFamily: "Cormorant Garamond", fontSize: 22, fontWeight: 400, color: "#F0EDE8", flex: 1 }}>{detailGoal.name}</span>
+          <button onClick={() => setDeleteId(detailGoal.id)} style={{ background: "rgba(224,144,128,0.1)", border: "1px solid rgba(224,144,128,0.2)", borderRadius: 100, padding: "6px 12px", color: "#E09080", fontSize: 12, cursor: "pointer" }}>Supprimer</button>
         </div>
-        <span style={{ fontSize: 32 }}>💰</span>
+
+        <div style={{ padding: "24px 20px" }}>
+          {/* Progress visuel */}
+          <div style={{ background: `${detailGoal.color}10`, border: `1px solid ${detailGoal.color}25`, borderRadius: 24, padding: "24px", marginBottom: 20, textAlign: "center" }}>
+            <div style={{ position: "relative", width: 120, height: 120, margin: "0 auto 16px" }}>
+              <svg width="120" height="120" style={{ transform: "rotate(-90deg)" }}>
+                <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="8" />
+                <circle cx="60" cy="60" r="52" fill="none" stroke={detailGoal.color} strokeWidth="8"
+                  strokeDasharray={`${2 * Math.PI * 52}`}
+                  strokeDashoffset={`${2 * Math.PI * 52 * (1 - pct / 100)}`}
+                  strokeLinecap="round" style={{ transition: "stroke-dashoffset 0.8s" }} />
+              </svg>
+              <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ fontFamily: "Cormorant Garamond", fontSize: 28, fontWeight: 400, color: detailGoal.color, lineHeight: 1 }}>{pct}%</span>
+                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>complété</span>
+              </div>
+            </div>
+            <p style={{ fontFamily: "Cormorant Garamond", fontSize: 32, fontWeight: 300, color: "#F0EDE8", margin: "0 0 4px" }}>
+              {detailGoal.saved.toFixed(0)}€ <span style={{ fontSize: 18, color: "rgba(255,255,255,0.3)" }}>/ {detailGoal.target}€</span>
+            </p>
+            {!done && <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 13, margin: 0 }}>Encore {remaining.toFixed(0)}€ pour atteindre ton objectif</p>}
+            {done  && <p style={{ color: detailGoal.color, fontSize: 14, fontWeight: 600, margin: 0 }}>🎉 Objectif atteint !</p>}
+          </div>
+
+          {/* Allouer */}
+          {!done && available > 0 && (
+            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: "18px", marginBottom: 20 }}>
+              <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", margin: "0 0 12px" }}>Allouer des économies</p>
+              <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, margin: "0 0 14px" }}>Disponible : <span style={{ color: "#9CAF88", fontWeight: 600 }}>{available.toFixed(0)}€</span></p>
+              <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                {[10, 25, 50].map(v => (
+                  <button key={v} onClick={() => setAllocAmount(String(Math.min(v, available, remaining)))}
+                    style={{ flex: 1, padding: "10px", borderRadius: 12, border: `1px solid ${allocAmount === String(Math.min(v, available, remaining)) ? detailGoal.color : "rgba(255,255,255,0.1)"}`, background: allocAmount === String(Math.min(v, available, remaining)) ? `${detailGoal.color}15` : "transparent", color: "rgba(255,255,255,0.6)", fontSize: 13, cursor: "pointer" }}>
+                    {v}€
+                  </button>
+                ))}
+                <input type="number" placeholder="Autre" value={allocAmount} onChange={e => setAllocAmount(e.target.value)}
+                  style={{ flex: 1, padding: "10px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "#F0EDE8", fontSize: 13, outline: "none", textAlign: "center", boxSizing: "border-box" }} />
+              </div>
+              <button onClick={() => allocate(detailGoal.id, allocAmount)} style={{ width: "100%", padding: "14px", background: allocAmount ? detailGoal.color : "rgba(255,255,255,0.06)", border: "none", borderRadius: 100, color: allocAmount ? "#0D0D0D" : "rgba(255,255,255,0.3)", fontWeight: 700, fontSize: 14, cursor: allocAmount ? "pointer" : "not-allowed", transition: "all 0.2s" }}>
+                Allouer {allocAmount ? `${allocAmount}€` : ""}
+              </button>
+            </div>
+          )}
+
+          {available === 0 && !done && (
+            <div style={{ background: "rgba(232,196,160,0.08)", border: "1px solid rgba(232,196,160,0.2)", borderRadius: 16, padding: "14px 16px", marginBottom: 20 }}>
+              <p style={{ color: "rgba(232,196,160,0.7)", fontSize: 13, margin: 0, lineHeight: 1.6 }}>💡 Utilise le bouton Pause pour éviter des achats impulsifs et alimenter ta cagnotte.</p>
+            </div>
+          )}
+
+          {/* Historique */}
+          <div>
+            <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", margin: "0 0 12px" }}>Historique des versements</p>
+            {detailGoal.history.length === 0
+              ? <p style={{ color: "rgba(255,255,255,0.2)", fontSize: 13, textAlign: "center", padding: "20px 0" }}>Aucun versement pour l'instant</p>
+              : detailGoal.history.map((h, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                  <div>
+                    <p style={{ color: "#F0EDE8", fontSize: 14, margin: "0 0 2px" }}>+{h.amount.toFixed(0)}€</p>
+                    <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, margin: 0 }}>{h.source}</p>
+                  </div>
+                  <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 12 }}>{h.date}</span>
+                </div>
+              ))
+            }
+          </div>
+        </div>
+
+        {/* Confirm delete */}
+        {deleteId && (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 100, padding: "0 16px 32px" }}>
+            <div className="scale-in" style={{ width: "100%", maxWidth: 400, background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 24, padding: 24 }}>
+              <p style={{ fontFamily: "Cormorant Garamond", fontSize: 24, color: "#F0EDE8", marginBottom: 8 }}>Supprimer cet objectif ?</p>
+              <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 24 }}>Les économies allouées seront remises dans ta cagnotte disponible.</p>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => setDeleteId(null)} className="btn-ghost" style={{ flex: 1, padding: "14px" }}>Annuler</button>
+                <button onClick={() => deleteGoal(deleteId)} style={{ flex: 1, padding: "14px", background: "#E09080", border: "none", borderRadius: 100, color: "white", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>Supprimer</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── Vue principale
+  return (
+    <div style={{ minHeight: "100vh", background: "#0D0D0D", padding: "32px 20px 100px" }}>
+
+      {/* Header */}
+      <p style={{ fontFamily: "DM Sans", fontSize: 11, letterSpacing: 4, color: "#9CAF88", opacity: 0.7, margin: "0 0 4px" }}>ÉPARGNE</p>
+      <h2 style={{ fontFamily: "Cormorant Garamond", fontSize: 38, fontWeight: 400, fontStyle: "italic", color: "#F0EDE8", margin: "0 0 4px" }}>Mes objectifs</h2>
+      <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 13, marginBottom: 24, lineHeight: 1.6 }}>Chaque achat évité te rapproche de ce qui compte vraiment</p>
+
+      {/* Cagnotte totale */}
+      <div style={{ background: "linear-gradient(135deg, rgba(156,175,136,0.12), rgba(156,175,136,0.04))", border: "1px solid rgba(156,175,136,0.25)", borderRadius: 24, padding: "20px 24px", marginBottom: 20 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, margin: "0 0 4px" }}>Cagnotte totale</p>
+            <p style={{ fontFamily: "Cormorant Garamond", fontSize: 44, fontWeight: 300, color: "#9CAF88", margin: "0 0 4px", lineHeight: 1 }}>{totalSaved.toFixed(0)}€</p>
+            <p style={{ color: "rgba(255,255,255,0.25)", fontSize: 12, margin: 0 }}>économisés grâce à tes pauses</p>
+          </div>
+          <span style={{ fontSize: 36 }}>💰</span>
+        </div>
+        {/* Répartition */}
+        <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+            <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>Alloué aux objectifs</span>
+            <span style={{ color: "#F0EDE8", fontSize: 12, fontWeight: 600 }}>{totalAllocated.toFixed(0)}€</span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>Disponible</span>
+            <span style={{ color: "#9CAF88", fontSize: 12, fontWeight: 600 }}>{available.toFixed(0)}€</span>
+          </div>
+          {/* Barre de répartition */}
+          <div style={{ height: 4, background: "rgba(255,255,255,0.07)", borderRadius: 100, overflow: "hidden", marginTop: 12 }}>
+            <div style={{ height: "100%", width: totalSaved > 0 ? `${(totalAllocated / totalSaved) * 100}%` : "0%", background: "#9CAF88", borderRadius: 100, transition: "width 0.6s" }} />
+          </div>
+        </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
+      {/* Liste des objectifs */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 16 }}>
         {goals.map(g => {
           const pct = Math.min(100, Math.round((g.saved / g.target) * 100));
           const done = pct >= 100;
+          const remaining = g.target - g.saved;
+          const pausesNeeded = available > 0 ? Math.ceil(remaining / (available / Math.max(1, goals.length))) : "—";
           return (
-            <div key={g.id} style={{
-              padding: '20px', borderRadius: 20,
-              background: done ? 'rgba(156,175,136,0.1)' : 'rgba(255,255,255,0.04)',
-              border: `1.5px solid ${done ? 'rgba(156,175,136,0.3)' : 'rgba(255,255,255,0.08)'}`,
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                <span style={{ fontSize: 32 }}>{g.emoji}</span>
+            <div key={g.id} onClick={() => setShowDetail(g.id)} style={{ padding: "18px 20px", borderRadius: 20, background: done ? `${g.color}10` : "rgba(255,255,255,0.04)", border: `1.5px solid ${done ? g.color + "35" : "rgba(255,255,255,0.07)"}`, cursor: "pointer", transition: "all 0.2s" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                <div style={{ width: 44, height: 44, borderRadius: "50%", background: `${g.color}15`, border: `1px solid ${g.color}30`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>{g.emoji}</div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ color: '#F0EDE8', fontSize: 16, fontWeight: 600, margin: 0 }}>{g.name}</p>
-                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, margin: '2px 0 0' }}>{g.saved.toFixed(0)}€ / {g.target}€</p>
+                  <p style={{ color: "#F0EDE8", fontSize: 15, fontWeight: 500, margin: "0 0 1px" }}>{g.name}</p>
+                  <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, margin: 0 }}>
+                    {done ? "Objectif atteint 🎉" : `${remaining.toFixed(0)}€ restants`}
+                  </p>
                 </div>
-                <span style={{ fontFamily: 'Cormorant Garamond', fontSize: 26, fontWeight: 500, color: done ? '#9CAF88' : 'rgba(255,255,255,0.3)', letterSpacing: 1 }}>{pct}%</span>
+                <div style={{ textAlign: "right" }}>
+                  <p style={{ fontFamily: "Cormorant Garamond", fontSize: 22, fontWeight: 400, color: g.color, margin: "0 0 1px", lineHeight: 1 }}>{pct}%</p>
+                  <p style={{ color: "rgba(255,255,255,0.25)", fontSize: 10, margin: 0 }}>{g.saved.toFixed(0)} / {g.target}€</p>
+                </div>
               </div>
-              <div className="progress-bar" style={{ height: 4, marginBottom: done ? 12 : 10 }}>
-                <div className="progress-fill" style={{ width: pct + "%" }} />
+              <div className="progress-bar" style={{ height: 3, marginBottom: 0 }}>
+                <div className="progress-fill" style={{ width: pct + "%", background: g.color }} />
               </div>
-              {done
-                ? <p style={{ textAlign: 'center', color: '#9CAF88', fontSize: 14, fontWeight: 600, margin: 0 }}>🎉 Objectif atteint ! Tu l'as mérité.</p>
-                : <button onClick={() => allocate(g.id)} className="btn-ghost" style={{ width: '100%', padding: '10px', fontSize: 13 }}>Allouer mes économies ici →</button>
-              }
+              {!done && g.history.length > 0 && (
+                <p style={{ color: "rgba(255,255,255,0.2)", fontSize: 11, margin: "8px 0 0" }}>
+                  Dernier versement : +{g.history[0].amount}€ · {g.history[0].date}
+                </p>
+              )}
             </div>
           );
         })}
       </div>
 
-      <button onClick={() => setShowAdd(true)} style={{
-        width: '100%', padding: '16px', borderRadius: 20,
-        background: 'transparent', border: '1.5px dashed rgba(156,175,136,0.3)',
-        color: '#9CAF88', fontSize: 15, fontWeight: 600, cursor: 'pointer'
-      }}>+ Ajouter un objectif</button>
+      {/* Ajouter objectif */}
+      <button onClick={() => setShowAdd(true)} style={{ width: "100%", padding: "16px", borderRadius: 20, background: "transparent", border: "1.5px dashed rgba(156,175,136,0.25)", color: "#9CAF88", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+        <span style={{ fontSize: 20 }}>+</span> Ajouter un objectif
+      </button>
 
+      {/* Modal ajout */}
       {showAdd && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(255,255,255,0.55)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100, padding: '0 16px 24px' }}>
-          <div className="scale-in" style={{ background: '#1A1A1A', borderRadius: 24, padding: '24px', width: '100%', maxWidth: 400, border: '1px solid rgba(255,255,255,0.1)' }}>
-            <h3 style={{ fontFamily: 'Cormorant Garamond', fontSize: 28, fontWeight: 400, color: '#F0EDE8', letterSpacing: 2, marginBottom: 16 }}>NOUVEL OBJECTIF</h3>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-              {emojis.map(e => <button key={e} onClick={() => setEmoji(e)} style={{ fontSize: 22, padding: '8px', borderRadius: 12, background: emoji === e ? 'rgba(156,175,136,0.2)' : 'rgba(255,255,255,0.06)', border: `1px solid ${emoji === e ? '#9CAF88' : 'transparent'}`, cursor: 'pointer' }}>{e}</button>)}
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 100, padding: "0 16px 24px" }}>
+          <div className="scale-in" style={{ background: "#1A1A1A", borderRadius: 28, padding: "28px 24px", width: "100%", maxWidth: 400, border: "1px solid rgba(255,255,255,0.08)" }}>
+            <p style={{ fontFamily: "Cormorant Garamond", fontSize: 28, fontWeight: 400, fontStyle: "italic", color: "#F0EDE8", marginBottom: 20 }}>Nouvel objectif</p>
+            <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", margin: "0 0 10px" }}>Choisis une icône</p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 18 }}>
+              {emojis.map(e => <button key={e} onClick={() => setEmoji(e)} style={{ fontSize: 22, padding: "8px 10px", borderRadius: 12, background: emoji === e ? "rgba(156,175,136,0.2)" : "rgba(255,255,255,0.05)", border: `1px solid ${emoji === e ? "#9CAF88" : "transparent"}`, cursor: "pointer" }}>{e}</button>)}
             </div>
-            <input placeholder="Nom de l'objectif" value={name} onChange={e => setName(e.target.value)}
-              style={{ width: '100%', padding: '14px 16px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, color: '#F0EDE8', fontSize: 15, outline: 'none', marginBottom: 10, boxSizing: 'border-box' }} />
-            <input type="number" placeholder="Montant cible (€)" value={target} onChange={e => setTarget(e.target.value)}
-              style={{ width: '100%', padding: '14px 16px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, color: '#F0EDE8', fontSize: 15, outline: 'none', marginBottom: 16, boxSizing: 'border-box' }} />
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setShowAdd(false)} className="btn-ghost" style={{ flex: 1, padding: '14px' }}>Annuler</button>
-              <button onClick={addGoal} className="btn-primary" style={{ flex: 1, padding: '14px', fontSize: 15 }}>Créer</button>
+            <input placeholder="Nom de l'objectif (ex: Voyage Japon)" value={name} onChange={e => setName(e.target.value)}
+              style={{ width: "100%", padding: "14px 16px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 14, color: "#F0EDE8", fontSize: 15, outline: "none", marginBottom: 10, boxSizing: "border-box" }} />
+            <input type="number" placeholder="Montant cible en €" value={target} onChange={e => setTarget(e.target.value)}
+              style={{ width: "100%", padding: "14px 16px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 14, color: "#F0EDE8", fontSize: 15, outline: "none", marginBottom: 18, boxSizing: "border-box" }} />
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setShowAdd(false)} className="btn-ghost" style={{ flex: 1, padding: "14px" }}>Annuler</button>
+              <button onClick={addGoal} className="btn-primary" style={{ flex: 1, padding: "14px", fontSize: 15 }}>Créer</button>
             </div>
           </div>
         </div>
