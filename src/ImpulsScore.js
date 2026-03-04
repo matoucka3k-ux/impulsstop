@@ -456,7 +456,7 @@ export function Community({ userScore }) {
         </div>
 
         {/* Messages */}
-        <div style={{ flex: 1, padding: "16px 16px", display: "flex", flexDirection: "column", gap: 10, overflowY: "auto" }}>
+        <div style={{ flex: 1, padding: "16px 16px 140px", display: "flex", flexDirection: "column", gap: 10, overflowY: "auto" }}>
           {msgs.map((m, i) => (
             <div key={i} style={{
               display: "flex", flexDirection: m.author === "Toi" ? "row-reverse" : "row",
@@ -486,7 +486,7 @@ export function Community({ userScore }) {
         </div>
 
         {/* Input */}
-        <div style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 430, padding: "12px 16px 24px", background: "rgba(13,13,13,0.98)", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ position: "fixed", bottom: 65, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 430, padding: "12px 16px 12px", background: "rgba(13,13,13,0.98)", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
           <div style={{ display: "flex", gap: 10 }}>
             <input
               value={chatInput}
