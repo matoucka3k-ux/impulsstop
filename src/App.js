@@ -1260,29 +1260,70 @@ function Goals({ totalSaved, allocateSavings }) {
           const pct = Math.min(100, Math.round((g.saved / g.target) * 100));
           const done = pct >= 100;
           const remaining = g.target - g.saved;
-          const pausesNeeded = available > 0 ? Math.ceil(remaining / (available / Math.max(1, goals.length))) : "—";
+          const isAllocOpen = showAlloc === g.id;
           return (
-            <div key={g.id} onClick={() => setShowDetail(g.id)} style={{ padding: "18px 20px", borderRadius: 20, background: done ? `${g.color}10` : "rgba(255,255,255,0.04)", border: `1.5px solid ${done ? g.color + "35" : "rgba(255,255,255,0.07)"}`, cursor: "pointer", transition: "all 0.2s" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-                <div style={{ width: 44, height: 44, borderRadius: "50%", background: `${g.color}15`, border: `1px solid ${g.color}30`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>{g.emoji}</div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ color: "#F0EDE8", fontSize: 15, fontWeight: 500, margin: "0 0 1px" }}>{g.name}</p>
-                  <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, margin: 0 }}>
-                    {done ? "Objectif atteint 🎉" : `${remaining.toFixed(0)}€ restants`}
-                  </p>
+            <div key={g.id} style={{ borderRadius: 20, background: done ? `${g.color}10` : "rgba(255,255,255,0.04)", border: `1.5px solid ${isAllocOpen ? g.color + "60" : done ? g.color + "35" : "rgba(255,255,255,0.07)"}`, overflow: "hidden", transition: "all 0.2s" }}>
+              {/* Card header — cliquable pour détail */}
+              <div onClick={() => setShowDetail(g.id)} style={{ padding: "18px 20px 14px", cursor: "pointer" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: "50%", background: `${g.color}15`, border: `1px solid ${g.color}30`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>{g.emoji}</div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ color: "#F0EDE8", fontSize: 15, fontWeight: 500, margin: "0 0 1px" }}>{g.name}</p>
+                    <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, margin: 0 }}>
+                      {done ? "Objectif atteint 🎉" : `${g.saved.toFixed(0)}€ / ${g.target}€`}
+                    </p>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <p style={{ fontFamily: "Cormorant Garamond", fontSize: 22, fontWeight: 400, color: g.color, margin: "0 0 1px", lineHeight: 1 }}>{pct}%</p>
+                    <p style={{ color: "rgba(255,255,255,0.25)", fontSize: 10, margin: 0 }}>{remaining.toFixed(0)}€ restants</p>
+                  </div>
                 </div>
-                <div style={{ textAlign: "right" }}>
-                  <p style={{ fontFamily: "Cormorant Garamond", fontSize: 22, fontWeight: 400, color: g.color, margin: "0 0 1px", lineHeight: 1 }}>{pct}%</p>
-                  <p style={{ color: "rgba(255,255,255,0.25)", fontSize: 10, margin: 0 }}>{g.saved.toFixed(0)} / {g.target}€</p>
+                <div className="progress-bar" style={{ height: 3 }}>
+                  <div className="progress-fill" style={{ width: pct + "%", background: g.color }} />
                 </div>
               </div>
-              <div className="progress-bar" style={{ height: 3, marginBottom: 0 }}>
-                <div className="progress-fill" style={{ width: pct + "%", background: g.color }} />
-              </div>
-              {!done && g.history.length > 0 && (
-                <p style={{ color: "rgba(255,255,255,0.2)", fontSize: 11, margin: "8px 0 0" }}>
-                  Dernier versement : +{g.history[0].amount}€ · {g.history[0].date}
-                </p>
+
+              {/* Bouton allouer / zone d'allocation */}
+              {!done && (
+                <div style={{ borderTop: `1px solid ${isAllocOpen ? g.color + "25" : "rgba(255,255,255,0.05)"}` }}>
+                  {!isAllocOpen ? (
+                    <button onClick={e => { e.stopPropagation(); setShowAlloc(g.id); setAllocAmount(""); }}
+                      style={{ width: "100%", padding: "12px 20px", background: "transparent", border: "none", color: available > 0 ? g.color : "rgba(255,255,255,0.2)", fontSize: 13, fontWeight: 600, cursor: available > 0 ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                      {available > 0 ? <><span>＋</span> Allouer des économies</> : "Aucune économie disponible"}
+                    </button>
+                  ) : (
+                    <div style={{ padding: "14px 16px", background: `${g.color}06` }}>
+                      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, margin: "0 0 10px" }}>
+                        Disponible : <span style={{ color: g.color, fontWeight: 600 }}>{available.toFixed(0)}€</span>
+                        <span style={{ marginLeft: 8, color: "rgba(255,255,255,0.2)" }}>· Max allouable : {Math.min(available, remaining).toFixed(0)}€</span>
+                      </p>
+                      {/* Raccourcis rapides */}
+                      <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+                        {[10, 25, 50, Math.min(available, remaining)].filter((v, i, arr) => arr.indexOf(v) === i && v > 0).map(v => (
+                          <button key={v} onClick={() => setAllocAmount(String(v))}
+                            style={{ flex: 1, padding: "8px 4px", borderRadius: 10, border: `1px solid ${allocAmount === String(v) ? g.color : "rgba(255,255,255,0.1)"}`, background: allocAmount === String(v) ? `${g.color}20` : "rgba(255,255,255,0.04)", color: allocAmount === String(v) ? g.color : "rgba(255,255,255,0.5)", fontSize: 12, cursor: "pointer" }}>
+                            {v === Math.min(available, remaining) && v !== 10 && v !== 25 && v !== 50 ? "Tout" : `${v}€`}
+                          </button>
+                        ))}
+                        <input type="number" placeholder="€" value={allocAmount} onChange={e => setAllocAmount(e.target.value)}
+                          style={{ flex: 1, padding: "8px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "#F0EDE8", fontSize: 12, outline: "none", textAlign: "center", boxSizing: "border-box", minWidth: 0 }} />
+                      </div>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button onClick={() => { setShowAlloc(null); setAllocAmount(""); }}
+                          style={{ flex: 1, padding: "10px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 100, color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer" }}>Annuler</button>
+                        <button onClick={() => allocate(g.id, allocAmount)}
+                          style={{ flex: 2, padding: "10px", background: allocAmount && parseFloat(allocAmount) > 0 ? g.color : "rgba(255,255,255,0.06)", border: "none", borderRadius: 100, color: allocAmount && parseFloat(allocAmount) > 0 ? "#0D0D0D" : "rgba(255,255,255,0.2)", fontWeight: 700, fontSize: 13, cursor: allocAmount ? "pointer" : "not-allowed", transition: "all 0.2s" }}>
+                          Confirmer {allocAmount ? `${allocAmount}€` : ""}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              {done && (
+                <div style={{ padding: "10px 20px", borderTop: "1px solid rgba(255,255,255,0.05)", textAlign: "center" }}>
+                  <span style={{ color: g.color, fontSize: 13, fontWeight: 600 }}>🎉 Objectif atteint !</span>
+                </div>
               )}
             </div>
           );
