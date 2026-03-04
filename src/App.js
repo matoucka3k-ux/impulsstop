@@ -299,7 +299,7 @@ function Test({ setPage, setScore }) {
 }
 
 // ─── RESULTS ──────────────────────────────────────────────────────────────────
-const profiles = [
+const scoreProfiles = [
   { min: 0, max: 25, label: "LE RÉFLÉCHI", msg: "Tu achètes avec la tête. Quelques petites habitudes à peaufiner et tu es au top.", savings: 500, accent: "#B8D4C8" },
   { min: 26, max: 50, label: "LE SPONTANÉ", msg: "Tu te laisses parfois emporter par l'instant. C'est humain — les marques comptent là-dessus.", savings: 2160, accent: "#9CAF88" },
   { min: 51, max: 75, label: "L'ÉMOTIONNEL", msg: "Tes achats sont souvent liés à ce que tu ressens. Apprendre à les décoder change tout.", savings: 4800, accent: "#E8C4A0" },
@@ -307,7 +307,7 @@ const profiles = [
 ];
 
 function Results({ score, setPage, onShare }) {
-  const profile = profiles.find((p) => score >= p.min && score <= p.max);
+  const profile = scoreProfiles.find((p) => score >= p.min && score <= p.max);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -986,221 +986,6 @@ function Goals({ totalSaved, allocateSavings }) {
 // ─── APP ROOT ─────────────────────────────────────────────────────────────────
 // ─── PROFILE ──────────────────────────────────────────────────────────────────
 function Profile({ score, streak, totalSaved, setPremium, setPage }) {
-  const cfg = Object.values({
-    low:    { min:0,  max:25,  label:"Le Réfléchi",  color:"#A8E6CF" },
-    medium: { min:26, max:50,  label:"Le Spontané",  color:"#9CAF88" },
-    high:   { min:51, max:75,  label:"L'Émotionnel", color:"#E8C4A0" },
-    crisis: { min:76, max:100, label:"Le Réflexe",   color:"#D4856A" },
-  }).find(c => score >= c.min && score <= c.max) || { label:"—", color:"#9CAF88" };
-
-  const [showLogout, setShowLogout] = useState(false);
-  const [notifs, setNotifs] = useState(true);
-  const [remind, setRemind] = useState(true);
-  const [plan, setPlan] = useState("annual"); // "monthly" | "annual"
-
-  const badges = [
-    { emoji:"🥉", name:"Premier pas",             days:3,  unlocked: streak >= 3  },
-    { emoji:"🥈", name:"Une semaine warrior",      days:7,  unlocked: streak >= 7  },
-    { emoji:"🥇", name:"Deux semaines de contrôle",days:14, unlocked: streak >= 14 },
-    { emoji:"💎", name:"Le mois sans craquer",     days:30, unlocked: streak >= 30 },
-    { emoji:"🏆", name:"ImpulsStop Master",        days:60, unlocked: streak >= 60 },
-  ];
-  const unlockedCount = badges.filter(b => b.unlocked).length;
-
-  const Toggle = ({ value, onChange }) => (
-    <div onClick={() => onChange(!value)} style={{
-      width: 44, height: 26, borderRadius: 100, cursor: "pointer",
-      background: value ? "#9CAF88" : "rgba(255,255,255,0.1)",
-      position: "relative", transition: "background 0.25s", flexShrink: 0,
-    }}>
-      <div style={{
-        position: "absolute", top: 3, left: value ? 21 : 3,
-        width: 20, height: 20, borderRadius: "50%", background: "white",
-        transition: "left 0.25s", boxShadow: "0 1px 4px rgba(0,0,0,0.3)"
-      }} />
-    </div>
-  );
-
-  const Section = ({ title, children }) => (
-    <div style={{ marginBottom: 24 }}>
-      <p style={{ fontFamily:"DM Sans", fontSize:11, letterSpacing:3, color:"rgba(255,255,255,0.3)", textTransform:"uppercase", marginBottom:10, paddingLeft:4 }}>{title}</p>
-      <div style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:20, overflow:"hidden" }}>
-        {children}
-      </div>
-    </div>
-  );
-
-  const Row = ({ icon, label, value, action, danger, last }) => (
-    <div onClick={action} style={{
-      display:"flex", alignItems:"center", gap:14, padding:"15px 18px",
-      borderBottom: last ? "none" : "1px solid rgba(255,255,255,0.05)",
-      cursor: action ? "pointer" : "default",
-    }}>
-      <span style={{ fontSize:18, width:24, textAlign:"center", flexShrink:0 }}>{icon}</span>
-      <span style={{ flex:1, color: danger ? "#D4856A" : "rgba(255,255,255,0.8)", fontSize:14 }}>{label}</span>
-      {value && <span style={{ color:"rgba(255,255,255,0.35)", fontSize:13 }}>{value}</span>}
-      {action && !value && <span style={{ color:"rgba(255,255,255,0.2)", fontSize:16 }}>›</span>}
-    </div>
-  );
-
-  return (
-    <div style={{ minHeight:"100vh", background:"#0D0D0D", padding:"32px 20px 100px", overflowY:"auto" }}>
-
-      {/* Header */}
-      <span style={{ fontFamily:"DM Sans", fontSize:11, letterSpacing:4, color:"#9CAF88", opacity:0.7 }}>MON COMPTE</span>
-      <h2 style={{ fontFamily:"Cormorant Garamond", fontSize:40, fontWeight:500, color:"#F0EDE8", margin:"4px 0 24px" }}>Profil</h2>
-
-      {/* Avatar + stats */}
-      <div className="fade-up-1" style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:24, padding:"24px 20px", marginBottom:24, textAlign:"center", position:"relative", overflow:"hidden" }}>
-        <div style={{ position:"absolute", top:-40, left:"50%", transform:"translateX(-50%)", width:200, height:200, borderRadius:"50%", background:`radial-gradient(circle, ${cfg.color}12, transparent 70%)`, pointerEvents:"none" }} />
-        {/* Avatar circle */}
-        <div style={{ width:72, height:72, borderRadius:"50%", background:`${cfg.color}20`, border:`2px solid ${cfg.color}50`, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 12px", fontSize:28 }}>
-          🧘
-        </div>
-        <p style={{ color:"#F0EDE8", fontSize:17, fontWeight:600, margin:"0 0 2px" }}>Mon compte</p>
-        <div style={{ display:"inline-flex", alignItems:"center", gap:6, background:`${cfg.color}15`, border:`1px solid ${cfg.color}30`, borderRadius:100, padding:"4px 12px", margin:"6px 0 20px" }}>
-          <div style={{ width:6, height:6, borderRadius:"50%", background:cfg.color }} />
-          <span style={{ fontSize:12, color:cfg.color, fontWeight:500 }}>{cfg.label}</span>
-        </div>
-
-        {/* Mini stats */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
-          {[
-            { icon:"🔥", val: streak, label:"Streak" },
-            { icon:"💰", val: `${totalSaved.toFixed(0)}€`, label:"Économisé" },
-            { icon:"🏅", val: `${unlockedCount}/5`, label:"Badges" },
-          ].map(s => (
-            <div key={s.label} style={{ background:"rgba(255,255,255,0.04)", borderRadius:14, padding:"12px 8px", textAlign:"center" }}>
-              <div style={{ fontSize:20, marginBottom:4 }}>{s.icon}</div>
-              <div style={{ fontFamily:"Cormorant Garamond", fontSize:22, fontWeight:500, color:"#F0EDE8" }}>{s.val}</div>
-              <div style={{ fontSize:10, color:"rgba(255,255,255,0.35)", marginTop:2 }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Impuls Score */}
-      <div className="fade-up-2" style={{ background:`${cfg.color}10`, border:`1px solid ${cfg.color}25`, borderRadius:20, padding:"16px 20px", marginBottom:24, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-        <div>
-          <p style={{ color:"rgba(255,255,255,0.4)", fontSize:11, letterSpacing:2, textTransform:"uppercase", margin:"0 0 4px" }}>Impuls Score</p>
-          <p style={{ fontFamily:"Cormorant Garamond", fontSize:44, fontWeight:300, color:cfg.color, lineHeight:1, margin:0 }}>{score}<span style={{ fontSize:16, color:"rgba(255,255,255,0.3)", marginLeft:4 }}>/100</span></p>
-        </div>
-        <button onClick={() => setPage("test")} style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:100, padding:"8px 16px", color:"rgba(255,255,255,0.6)", fontSize:12, cursor:"pointer" }}>
-          Refaire →
-        </button>
-      </div>
-
-      {/* Badges */}
-      <div className="fade-up-2" style={{ marginBottom:24 }}>
-        <p style={{ fontFamily:"DM Sans", fontSize:11, letterSpacing:3, color:"rgba(255,255,255,0.3)", textTransform:"uppercase", marginBottom:10, paddingLeft:4 }}>Récompenses</p>
-        <div style={{ display:"flex", gap:10, overflowX:"auto", paddingBottom:4 }}>
-          {badges.map(b => (
-            <div key={b.name} style={{
-              flexShrink:0, width:72, textAlign:"center",
-              opacity: b.unlocked ? 1 : 0.3,
-              filter: b.unlocked ? "none" : "grayscale(1)",
-            }}>
-              <div style={{ width:52, height:52, borderRadius:"50%", background: b.unlocked ? "rgba(156,175,136,0.12)" : "rgba(255,255,255,0.04)", border:`1px solid ${b.unlocked ? "rgba(156,175,136,0.3)" : "rgba(255,255,255,0.08)"}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, margin:"0 auto 6px" }}>
-                {b.unlocked ? b.emoji : "🔒"}
-              </div>
-              <p style={{ color:"rgba(255,255,255,0.5)", fontSize:10, lineHeight:1.3 }}>{b.name}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Subscription */}
-      <Section title="Abonnement">
-        <div style={{ padding:"16px 18px", borderBottom:"1px solid rgba(255,255,255,0.05)" }}>
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
-            <div>
-              <p style={{ color:"#9CAF88", fontSize:14, fontWeight:600, margin:"0 0 2px" }}>
-                {plan === "annual" ? "Premium Annuel" : "Premium Mensuel"}
-              </p>
-              <p style={{ color:"rgba(255,255,255,0.35)", fontSize:12, margin:0 }}>
-                {plan === "annual" ? "24,99€/an · Renouvellement auto" : "3,99€/mois · Renouvellement auto"}
-              </p>
-            </div>
-            <div style={{ background:"rgba(156,175,136,0.15)", border:"1px solid rgba(156,175,136,0.3)", borderRadius:100, padding:"4px 10px" }}>
-              <span style={{ color:"#9CAF88", fontSize:11, fontWeight:600 }}>ACTIF</span>
-            </div>
-          </div>
-          {/* Plan toggle */}
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
-            {[["monthly","3,99€/mois"], ["annual","24,99€/an"]].map(([key, label]) => (
-              <button key={key} onClick={() => setPlan(key)} style={{
-                padding:"10px", borderRadius:12, border:`1.5px solid ${plan===key ? "#9CAF88" : "rgba(255,255,255,0.08)"}`,
-                background: plan===key ? "rgba(156,175,136,0.1)" : "rgba(255,255,255,0.03)",
-                color: plan===key ? "#9CAF88" : "rgba(255,255,255,0.4)",
-                fontSize:13, fontWeight: plan===key ? 600 : 400, cursor:"pointer", transition:"all 0.2s"
-              }}>
-                {label}
-                {key === "annual" && <span style={{ display:"block", fontSize:10, marginTop:2, color: plan===key ? "#9CAF88" : "rgba(255,255,255,0.25)" }}>− 48%</span>}
-              </button>
-            ))}
-          </div>
-        </div>
-        <Row icon="🧾" label="Historique de facturation" action={() => {}} last={false} />
-        <Row icon="❌" label="Annuler l'abonnement" danger action={() => {}} last />
-      </Section>
-
-      {/* Notifications */}
-      <Section title="Notifications">
-        <div style={{ display:"flex", alignItems:"center", gap:14, padding:"15px 18px", borderBottom:"1px solid rgba(255,255,255,0.05)" }}>
-          <span style={{ fontSize:18, width:24, textAlign:"center" }}>🔔</span>
-          <span style={{ flex:1, color:"rgba(255,255,255,0.8)", fontSize:14 }}>Rappel quotidien</span>
-          <Toggle value={notifs} onChange={setNotifs} />
-        </div>
-        <div style={{ display:"flex", alignItems:"center", gap:14, padding:"15px 18px" }}>
-          <span style={{ fontSize:18, width:24, textAlign:"center" }}>🎯</span>
-          <span style={{ flex:1, color:"rgba(255,255,255,0.8)", fontSize:14 }}>Rappel du plan 30J</span>
-          <Toggle value={remind} onChange={setRemind} />
-        </div>
-      </Section>
-
-      {/* Support & Legal */}
-      <Section title="Support">
-        <Row icon="📖" label="Comment ça marche ?" action={() => {}} />
-        <Row icon="🔬" label="Sources scientifiques" action={() => window.open("https://www.frontiersin.org/articles/10.3389/fpsyg.2015.01374/full")} />
-        <Row icon="✉️" label="Nous contacter" action={() => {}} />
-        <Row icon="⭐" label="Noter l'app" action={() => {}} last />
-      </Section>
-
-      <Section title="Légal">
-        <Row icon="🔒" label="Politique de confidentialité" action={() => {}} />
-        <Row icon="📄" label="Conditions d'utilisation" action={() => {}} last />
-      </Section>
-
-      {/* Logout */}
-      <button onClick={() => setShowLogout(true)} style={{
-        width:"100%", padding:"16px", borderRadius:100,
-        background:"rgba(212,133,106,0.08)", border:"1px solid rgba(212,133,106,0.25)",
-        color:"#D4856A", fontSize:14, fontWeight:500, cursor:"pointer", marginBottom:8
-      }}>
-        Se déconnecter
-      </button>
-      <p style={{ textAlign:"center", color:"rgba(255,255,255,0.2)", fontSize:11 }}>ImpulsStop v3.0 · impulsstop.app</p>
-
-      {/* Logout confirm */}
-      {showLogout && (
-        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.75)", display:"flex", alignItems:"flex-end", justifyContent:"center", zIndex:100, padding:"0 16px 32px" }}>
-          <div className="scale-in" style={{ width:"100%", maxWidth:400, background:"#1A1A1A", border:"1px solid rgba(255,255,255,0.08)", borderRadius:24, padding:24 }}>
-            <h3 style={{ fontFamily:"Cormorant Garamond", fontSize:26, fontWeight:400, color:"#F0EDE8", marginBottom:8 }}>Se déconnecter ?</h3>
-            <p style={{ color:"rgba(255,255,255,0.4)", fontSize:14, lineHeight:1.6, marginBottom:24 }}>Tes données et ta progression resteront sauvegardées.</p>
-            <div style={{ display:"flex", gap:10 }}>
-              <button onClick={() => setShowLogout(false)} style={{ flex:1, padding:"14px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:100, color:"rgba(255,255,255,0.6)", fontSize:14, cursor:"pointer" }}>Annuler</button>
-              <button onClick={() => { setPremium(false); setPage("home"); setShowLogout(false); }} style={{ flex:1, padding:"14px", background:"#D4856A", border:"none", borderRadius:100, color:"white", fontSize:14, fontWeight:600, cursor:"pointer" }}>Se déconnecter</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-
-// ─── PROFILE ─────────────────────────────────────────────────────────────────
-function Profile({ score, streak, totalSaved, setPremium, setPage }) {
   const { label, color, savings } = getConfig(score);
   const [notifs, setNotifs] = useState(true);
   const [reminders, setReminders] = useState(true);
@@ -1531,7 +1316,6 @@ export default function App() {
       {page === "streak" && premium && <Streak streak={streak} setStreak={setStreak} totalSaved={totalSaved} addSavings={addSavings} />}
       {page === "goals" && premium && <Goals totalSaved={totalSaved} allocateSavings={allocateSavings} />}
       {page === "community" && premium && <Community userScore={score} />}
-      {page === "profile" && premium && <Profile score={score} streak={streak} totalSaved={totalSaved} setPremium={setPremium} setPage={setPage} />}
       {page === "profile" && premium && <Profile score={score} streak={streak} totalSaved={totalSaved} setPremium={setPremium} setPage={setPage} />}
       {showNav && <BottomNavV2 page={page} setPage={setPage} />}
       {showShare && page !== "results" && <ShareCard score={score} onClose={() => setShowShare(false)} />}
