@@ -1241,11 +1241,7 @@ const badges = [
 
 // ─── GOALS MINI (used in Streak) ─────────────────────────────────────────────
 function GoalsMini({ totalSaved }) {
-  const [goals, setGoals] = useState([
-    { id: 1, name: "Voyage",   emoji: "✈️", target: 500,  saved: 87,  color: "#B8D4C8" },
-    { id: 2, name: "Sneakers", emoji: "👟", target: 150,  saved: 32,  color: "#E8C4A0" },
-    { id: 3, name: "Épargne",  emoji: "🏦", target: 1000, saved: 220, color: "#9CAF88" },
-  ]);
+  const [goals, setGoals] = useState([]);
   const [showAdd, setShowAdd]     = useState(false);
   const [showAlloc, setShowAlloc] = useState(null);
   const [allocAmount, setAllocAmount] = useState("");
@@ -1346,10 +1342,24 @@ function GoalsMini({ totalSaved }) {
         })}
       </div>
 
+      {/* Empty state */}
+      {goals.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '24px 16px', background: 'rgba(255,255,255,0.03)', border: '1.5px dashed rgba(156,175,136,0.2)', borderRadius: 16, marginBottom: 10 }}>
+          <div style={{ fontSize: 36, marginBottom: 10 }}>🎯</div>
+          <p style={{ fontFamily: 'Cormorant Garamond', fontSize: 20, fontWeight: 400, fontStyle: 'italic', color: '#F0EDE8', margin: '0 0 6px' }}>Aucun objectif pour l'instant</p>
+          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13, lineHeight: 1.6, margin: '0 0 16px' }}>Crée ton premier objectif et alloue tes économies vers ce qui compte vraiment pour toi.</p>
+          <button onClick={() => setShowAdd(true)} style={{ padding: '12px 24px', background: '#9CAF88', border: 'none', borderRadius: 100, color: '#0D0D0D', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+            + Créer mon premier objectif
+          </button>
+        </div>
+      )}
+
       {/* Ajouter objectif */}
-      <button onClick={() => setShowAdd(true)} style={{ width: '100%', padding: '12px', marginTop: 10, borderRadius: 14, background: 'transparent', border: '1.5px dashed rgba(156,175,136,0.2)', color: '#9CAF88', fontSize: 13, cursor: 'pointer' }}>
-        + Créer un objectif
-      </button>
+      {goals.length > 0 && (
+        <button onClick={() => setShowAdd(true)} style={{ width: '100%', padding: '12px', marginTop: 10, borderRadius: 14, background: 'transparent', border: '1.5px dashed rgba(156,175,136,0.2)', color: '#9CAF88', fontSize: 13, cursor: 'pointer' }}>
+          + Créer un objectif
+        </button>
+      )}
 
       {/* Modal ajout */}
       {showAdd && (
@@ -1491,11 +1501,7 @@ function Streak({ streak, setStreak, totalSaved, addSavings, setPage }) {
 
 // ─── GOALS ────────────────────────────────────────────────────────────────────
 function Goals({ totalSaved, allocateSavings }) {
-  const [goals, setGoals] = useState([
-    { id: 1, name: "Voyage",    emoji: "✈️", target: 500,  saved: 87,  color: "#B8D4C8", history: [{ date: "12 Mai",  amount: 45, source: "Pause Zara" }, { date: "3 Mai", amount: 42, source: "Pause Amazon" }] },
-    { id: 2, name: "Sneakers",  emoji: "👟", target: 150,  saved: 32,  color: "#E8C4A0", history: [{ date: "8 Mai",   amount: 32, source: "Pause ASOS" }] },
-    { id: 3, name: "Épargne",   emoji: "🏦", target: 1000, saved: 220, color: "#9CAF88", history: [{ date: "15 Mai", amount: 120, source: "Pause Shein" }, { date: "1 Mai", amount: 100, source: "Alloué manuellement" }] },
-  ]);
+  const [goals, setGoals] = useState([]);
   const [showAdd, setShowAdd]         = useState(false);
   const [showDetail, setShowDetail]   = useState(null); // goal id
   const [showAlloc, setShowAlloc]     = useState(null); // goal id
@@ -1744,10 +1750,26 @@ function Goals({ totalSaved, allocateSavings }) {
         })}
       </div>
 
+      {/* Empty state */}
+      {goals.length === 0 && (
+        <div style={{ textAlign: "center", padding: "40px 20px", background: "rgba(255,255,255,0.03)", border: "1.5px dashed rgba(156,175,136,0.2)", borderRadius: 24, marginBottom: 16 }}>
+          <div style={{ fontSize: 48, marginBottom: 14 }}>🎯</div>
+          <p style={{ fontFamily: "Cormorant Garamond", fontSize: 26, fontWeight: 300, fontStyle: "italic", color: "#F0EDE8", margin: "0 0 8px" }}>Aucun objectif créé</p>
+          <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 14, lineHeight: 1.7, margin: "0 0 24px", maxWidth: 260, marginLeft: "auto", marginRight: "auto" }}>
+            Définis ce pour quoi tu économises — un voyage, une paire de sneakers, une épargne. Chaque pause alimentera ta cagnotte.
+          </p>
+          <button onClick={() => setShowAdd(true)} style={{ padding: "14px 32px", background: "#9CAF88", border: "none", borderRadius: 100, color: "#0D0D0D", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
+            + Créer mon premier objectif
+          </button>
+        </div>
+      )}
+
       {/* Ajouter objectif */}
-      <button onClick={() => setShowAdd(true)} style={{ width: "100%", padding: "16px", borderRadius: 20, background: "transparent", border: "1.5px dashed rgba(156,175,136,0.25)", color: "#9CAF88", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-        <span style={{ fontSize: 20 }}>+</span> Ajouter un objectif
-      </button>
+      {goals.length > 0 && (
+        <button onClick={() => setShowAdd(true)} style={{ width: "100%", padding: "16px", borderRadius: 20, background: "transparent", border: "1.5px dashed rgba(156,175,136,0.25)", color: "#9CAF88", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+          <span style={{ fontSize: 20 }}>+</span> Ajouter un objectif
+        </button>
+      )}
 
       {/* Modal ajout */}
       {showAdd && (
