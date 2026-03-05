@@ -366,7 +366,7 @@ function Results({ score, setPage, onShare }) {
             Voir mon plan personnalisé →
           </button>
           <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 12, marginBottom: 16 }}>
-            Essai gratuit 7 jours · 3,99€/mois ensuite
+            Essai gratuit 7 jours · 1,99€/mois ensuite
           </p>
           <button onClick={onShare} style={{
             width: '100%', padding: '14px 0', borderRadius: 100, fontSize: 14,
@@ -422,7 +422,7 @@ function Paywall({ setPage, setPremium }) {
               <p style={{ color: '#F0EDE8', fontSize: 13, margin: 0 }}>Sans engagement</p>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <span style={{ fontFamily: 'Cormorant Garamond', fontWeight: 500, fontSize: 32, color: '#F0EDE8' }}>3,99€</span>
+              <span style={{ fontFamily: 'Cormorant Garamond', fontWeight: 500, fontSize: 32, color: '#F0EDE8' }}>1,99€</span>
               <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}> /mois</span>
             </div>
           </div>
@@ -443,14 +443,14 @@ function Paywall({ setPage, setPremium }) {
               padding: '4px 12px', borderBottomLeftRadius: 10,
               textTransform: 'uppercase'
             }}>
-              − 48%
+              − 33%
             </div>
             <div style={{ textAlign: 'left' }}>
               <p style={{ color: '#9CAF88', fontSize: 12, fontWeight: 600, margin: '0 0 2px' }}>Annuel</p>
-              <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, margin: 0 }}>Soit 2,08€/mois</p>
+              <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, margin: 0 }}>Soit 1,33€/mois</p>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <span style={{ fontFamily: 'Cormorant Garamond', fontWeight: 500, fontSize: 32, color: '#9CAF88' }}>24,99€</span>
+              <span style={{ fontFamily: 'Cormorant Garamond', fontWeight: 500, fontSize: 32, color: '#9CAF88' }}>15,99€</span>
               <span style={{ color: 'rgba(156,175,136,0.6)', fontSize: 13 }}> /an</span>
             </div>
           </div>
@@ -1853,11 +1853,11 @@ function Profile({ score, streak, totalSaved, setPremium, setPage }) {
 
   // ── Billing modal
   const fakeBills = [
-    { date: "01 Juin 2025",    amount: "24,99€", plan: "Annuel",  status: "Payé", id: "INV-2025-006" },
-    { date: "01 Juin 2024",    amount: "24,99€", plan: "Annuel",  status: "Payé", id: "INV-2024-006" },
-    { date: "01 Mai 2024",     amount: "3,99€",  plan: "Mensuel", status: "Payé", id: "INV-2024-005" },
-    { date: "01 Avril 2024",   amount: "3,99€",  plan: "Mensuel", status: "Payé", id: "INV-2024-004" },
-    { date: "01 Mars 2024",    amount: "3,99€",  plan: "Mensuel", status: "Payé", id: "INV-2024-003" },
+    { date: "01 Juin 2025",    amount: "15,99€", plan: "Annuel",  status: "Payé", id: "INV-2025-006" },
+    { date: "01 Juin 2024",    amount: "15,99€", plan: "Annuel",  status: "Payé", id: "INV-2024-006" },
+    { date: "01 Mai 2024",     amount: "1,99€",  plan: "Mensuel", status: "Payé", id: "INV-2024-005" },
+    { date: "01 Avril 2024",   amount: "1,99€",  plan: "Mensuel", status: "Payé", id: "INV-2024-004" },
+    { date: "01 Mars 2024",    amount: "1,99€",  plan: "Mensuel", status: "Payé", id: "INV-2024-003" },
   ];
 
   if (showBilling) return (
@@ -2080,13 +2080,13 @@ function Profile({ score, streak, totalSaved, setPremium, setPage }) {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <div>
                 <p style={{ color: "#F0EDE8", fontSize: 14, fontWeight: 500, margin: "0 0 2px" }}>ImpulsStop Premium</p>
-                <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, margin: 0 }}>{plan === "annual" ? "Annuel · 24,99€/an" : "Mensuel · 3,99€/mois"}</p>
+                <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, margin: 0 }}>{plan === "annual" ? "Annuel · 15,99€/an" : "Mensuel · 1,99€/mois"}</p>
               </div>
               <span style={{ background: color + "20", border: `1px solid ${color}40`, borderRadius: 100, padding: "4px 10px", fontSize: 11, color: color, fontWeight: 600 }}>Actif</span>
             </div>
             <div style={{ display: "flex", gap: 8 }}>
               <button onClick={() => setPlan("monthly")} style={{ flex: 1, padding: "8px", borderRadius: 10, border: `1px solid ${plan === "monthly" ? color : "rgba(255,255,255,0.1)"}`, background: plan === "monthly" ? color + "15" : "transparent", color: plan === "monthly" ? color : "rgba(255,255,255,0.4)", fontSize: 12, cursor: "pointer" }}>Mensuel</button>
-              <button onClick={() => setPlan("annual")} style={{ flex: 1, padding: "8px", borderRadius: 10, border: `1px solid ${plan === "annual" ? color : "rgba(255,255,255,0.1)"}`, background: plan === "annual" ? color + "15" : "transparent", color: plan === "annual" ? color : "rgba(255,255,255,0.4)", fontSize: 12, cursor: "pointer" }}>Annuel −48%</button>
+              <button onClick={() => setPlan("annual")} style={{ flex: 1, padding: "8px", borderRadius: 10, border: `1px solid ${plan === "annual" ? color : "rgba(255,255,255,0.1)"}`, background: plan === "annual" ? color + "15" : "transparent", color: plan === "annual" ? color : "rgba(255,255,255,0.4)", fontSize: 12, cursor: "pointer" }}>Annuel −33%</button>
             </div>
           </div>
           <Row icon="📄" label="Historique de facturation" onClick={() => setShowBilling(true)} />
