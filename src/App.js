@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { ImpulsScoreReveal, ShareCard, Community, launchConfetti as fireConfetti, getConfig } from "./ImpulsScore";
-import { supabase } from "./supabase";
+// Supabase loaded via CDN in index.html
+const supabase = window.supabase?.createClient("https://uqolnnpsjezrqkmtdqqi.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxb2xubnBzamV6cnFrbXRkcXFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MDkxMDksImV4cCI6MjA4ODM4NTEwOX0.gv0PD-KzmdrxSq5gE1hxbkIdWnUod_JdeMud261YTlc");
 
 // ─── UTILS ───────────────────────────────────────────────────────────────────
 function launchConfetti() {
