@@ -2238,29 +2238,49 @@ function BottomNavV2({ page, setPage }) {
 
 // ─── AUTH MODAL ──────────────────────────────────────────────────────────────
 function AuthModal({ onClose }) {
-  const [mode, setMode]       = useState("login"); // login | signup
+  const [mode, setMode]       = useState("login");
   const [email, setEmail]     = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
   const [success, setSuccess] = useState("");
 
+  // Wait for supabase CDN to be ready
+  const getClient = () => {
+    if (supabase) return supabase;
+    if (window.supabase) return window.supabase.createClient(
+      "https://uqolnnpsjezrqkmtdqqi.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxb2xubnBzamV6cnFrbXRkcXFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MDkxMDksImV4cCI6MjA4ODM4NTEwOX0.gv0PD-KzmdrxSq5gE1hxbkIdWnUod_JdeMud261YTlc"
+    );
+    return null;
+  };
+
   const handle = async () => {
+    if (!email || !password) { setError("Remplis tous les champs"); return; }
     setLoading(true); setError(""); setSuccess("");
-    if (mode === "login") {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) setError("Email ou mot de passe incorrect");
-      else onClose();
-    } else {
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) setError(error.message);
-      else setSuccess("Vérifie tes emails pour confirmer ton compte 🌿");
-    }
+    const client = getClient();
+    if (!client) { setError("Erreur de connexion. Réessaie."); setLoading(false); return; }
+    try {
+      if (mode === "login") {
+        const { error } = await client.auth.signInWithPassword({ email, password });
+        if (error) setError("Email ou mot de passe incorrect");
+        else onClose();
+      } else {
+        const { error } = await client.auth.signUp({ email, password });
+        if (error) setError(error.message);
+        else setSuccess("Vérifie tes emails pour confirmer ton compte 🌿");
+      }
+    } catch(e) { setError("Une erreur est survenue. Réessaie."); }
     setLoading(false);
   };
 
   const handleGoogle = async () => {
-    await supabase.auth.signInWithOAuth({ provider: "google" });
+    const client = getClient();
+    if (!client) { setError("Erreur de connexion"); return; }
+    await client.auth.signInWithOAuth({ 
+      provider: "google",
+      options: { redirectTo: window.location.origin }
+    });
   };
 
   return (
@@ -2273,16 +2293,7 @@ function AuthModal({ onClose }) {
           <button onClick={onClose} style={{ background: "rgba(255,255,255,0.07)", border: "none", borderRadius: "50%", width: 32, height: 32, cursor: "pointer", color: "#F0EDE8", fontSize: 16 }}>✕</button>
         </div>
 
-        {/* Google */}
-        <button onClick={handleGoogle} style={{ width: "100%", padding: "14px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 14, color: "#F0EDE8", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 16 }}>
-          <span style={{ fontSize: 18 }}>G</span> Continuer avec Google
-        </button>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-          <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
-          <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 12 }}>ou</span>
-          <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
-        </div>
 
         <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)}
           style={{ width: "100%", padding: "14px 16px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 14, color: "#F0EDE8", fontSize: 15, outline: "none", marginBottom: 10, boxSizing: "border-box" }} />
