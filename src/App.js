@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { ImpulsScoreReveal, ShareCard, Community, launchConfetti as fireConfetti, getConfig } from "./ImpulsScore";
 // Supabase loaded via CDN in index.html
-const supabase = window.supabase?.createClient("https://uqolnnpsjezrqkmtdqqi.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxb2xubnBzamV6cnFrbXRkcXFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MDkxMDksImV4cCI6MjA4ODM4NTEwOX0.gv0PD-KzmdrxSq5gE1hxbkIdWnUod_JdeMud261YTlc");
+const getSupabase = () => {
+  try { return window.supabase?.createClient("https://uqolnnpsjezrqkmtdqqi.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxb2xubnBzamV6cnFrbXRkcXFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MDkxMDksImV4cCI6MjA4ODM4NTEwOX0.gv0PD-KzmdrxSq5gE1hxbkIdWnUod_JdeMud261YTlc"); }
+  catch(e) { return null; }
+};
+const supabase = getSupabase();
 
 // ─── UTILS ───────────────────────────────────────────────────────────────────
 function launchConfetti() {
@@ -2319,6 +2323,7 @@ export default function App() {
 
   // Auth listener
   useEffect(() => {
+    if (!supabase) { setAuthLoading(false); return; }
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) loadProfile(session.user.id);
@@ -2332,6 +2337,7 @@ export default function App() {
   }, []);
 
   const loadProfile = async (userId) => {
+    if (!supabase) return;
     const { data } = await supabase.from("profiles").select("*").eq("id", userId).single();
     if (data) {
       setScore(data.score || 0);
@@ -2345,7 +2351,7 @@ export default function App() {
   };
 
   const saveProfile = useCallback(async () => {
-    if (!user) return;
+    if (!user || !supabase) return;
     await supabase.from("profiles").upsert({ id: user.id, score, streak, total_saved: totalSaved });
   }, [user, score, streak, totalSaved]);
 
