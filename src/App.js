@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { ImpulsScoreReveal, ShareCard, Community, launchConfetti as fireConfetti, getConfig } from "./ImpulsScore";
+import { supabase } from "./supabase";
 
 // ─── UTILS ───────────────────────────────────────────────────────────────────
 function launchConfetti() {
@@ -1797,7 +1798,7 @@ function Goals({ totalSaved, allocateSavings }) {
 
 // ─── APP ROOT ─────────────────────────────────────────────────────────────────
 // ─── PROFILE ──────────────────────────────────────────────────────────────────
-function Profile({ score, streak, totalSaved, setPremium, setPage }) {
+function Profile({ score, streak, totalSaved, setPremium, setPage, user, setShowAuth }) {
   const { label, color } = getConfig(score);
   const [notifs, setNotifs] = useState(true);
   const [reminders, setReminders] = useState(true);
@@ -2118,6 +2119,16 @@ function Profile({ score, streak, totalSaved, setPremium, setPage }) {
         </Section>
 
         <p style={{ textAlign: "center", color: "rgba(255,255,255,0.15)", fontSize: 11, marginTop: 8 }}>ImpulsStop v1.0 · Fait avec 🌿 par Mathis Bobo</p>
+      {!user && (
+        <div style={{ marginTop: 16, background: "rgba(156,175,136,0.06)", border: "1px solid rgba(156,175,136,0.2)", borderRadius: 16, padding: "14px 16px", textAlign: "center" }}>
+          <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, margin: "0 0 10px", lineHeight: 1.6 }}>
+            🔒 Connecte-toi pour sauvegarder ton streak et tes objectifs entre sessions
+          </p>
+          <button onClick={() => setShowAuth(true)} style={{ padding: "10px 24px", background: "#9CAF88", border: "none", borderRadius: 100, color: "#0D0D0D", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+            Se connecter / S'inscrire
+          </button>
+        </div>
+      )}
       </div>
 
       {/* Logout confirm */}
@@ -2128,7 +2139,7 @@ function Profile({ score, streak, totalSaved, setPremium, setPage }) {
             <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 24, lineHeight: 1.6 }}>Tes données locales seront conservées. Tu pourras te reconnecter à tout moment.</p>
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => setShowLogout(false)} className="btn-ghost" style={{ flex: 1, padding: "14px" }}>Annuler</button>
-              <button onClick={() => { setPremium(false); setPage("home"); setShowLogout(false); }} style={{ flex: 1, padding: "14px", background: "#E09080", border: "none", borderRadius: 100, color: "white", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>Déconnecter</button>
+              <button onClick={() => { await supabase.auth.signOut(); setPremium(false); setPage("home"); setShowLogout(false); }} style={{ flex: 1, padding: "14px", background: "#E09080", border: "none", borderRadius: 100, color: "white", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>Déconnecter</button>
             </div>
           </div>
         </div>
@@ -2220,6 +2231,77 @@ function BottomNavV2({ page, setPage }) {
   );
 }
 
+// ─── AUTH MODAL ──────────────────────────────────────────────────────────────
+function AuthModal({ onClose }) {
+  const [mode, setMode]       = useState("login"); // login | signup
+  const [email, setEmail]     = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState("");
+  const [success, setSuccess] = useState("");
+
+  const handle = async () => {
+    setLoading(true); setError(""); setSuccess("");
+    if (mode === "login") {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) setError("Email ou mot de passe incorrect");
+      else onClose();
+    } else {
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) setError(error.message);
+      else setSuccess("Vérifie tes emails pour confirmer ton compte 🌿");
+    }
+    setLoading(false);
+  };
+
+  const handleGoogle = async () => {
+    await supabase.auth.signInWithOAuth({ provider: "google" });
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.9)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 300, padding: "0 16px 24px" }}>
+      <div className="scale-in" style={{ width: "100%", maxWidth: 400, background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 28, padding: "28px 24px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+          <p style={{ fontFamily: "Cormorant Garamond", fontSize: 26, fontWeight: 400, fontStyle: "italic", color: "#F0EDE8", margin: 0 }}>
+            {mode === "login" ? "Se connecter" : "Créer un compte"}
+          </p>
+          <button onClick={onClose} style={{ background: "rgba(255,255,255,0.07)", border: "none", borderRadius: "50%", width: 32, height: 32, cursor: "pointer", color: "#F0EDE8", fontSize: 16 }}>✕</button>
+        </div>
+
+        {/* Google */}
+        <button onClick={handleGoogle} style={{ width: "100%", padding: "14px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 14, color: "#F0EDE8", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 16 }}>
+          <span style={{ fontSize: 18 }}>G</span> Continuer avec Google
+        </button>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+          <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
+          <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 12 }}>ou</span>
+          <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
+        </div>
+
+        <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)}
+          style={{ width: "100%", padding: "14px 16px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 14, color: "#F0EDE8", fontSize: 15, outline: "none", marginBottom: 10, boxSizing: "border-box" }} />
+        <input type="password" placeholder="Mot de passe" value={password} onChange={e => setPassword(e.target.value)}
+          style={{ width: "100%", padding: "14px 16px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 14, color: "#F0EDE8", fontSize: 15, outline: "none", marginBottom: 16, boxSizing: "border-box" }} />
+
+        {error && <p style={{ color: "#E09080", fontSize: 13, marginBottom: 12, textAlign: "center" }}>{error}</p>}
+        {success && <p style={{ color: "#9CAF88", fontSize: 13, marginBottom: 12, textAlign: "center" }}>{success}</p>}
+
+        <button onClick={handle} disabled={loading} className="btn-primary" style={{ width: "100%", padding: "16px", fontSize: 15, marginBottom: 14, opacity: loading ? 0.6 : 1 }}>
+          {loading ? "..." : mode === "login" ? "Se connecter" : "Créer mon compte"}
+        </button>
+
+        <p style={{ textAlign: "center", color: "rgba(255,255,255,0.35)", fontSize: 13 }}>
+          {mode === "login" ? "Pas encore de compte ? " : "Déjà un compte ? "}
+          <span onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }} style={{ color: "#9CAF88", cursor: "pointer", fontWeight: 600 }}>
+            {mode === "login" ? "S'inscrire" : "Se connecter"}
+          </span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [page, setPage] = useState("home");
   const [score, setScore] = useState(0);
@@ -2230,6 +2312,44 @@ export default function App() {
   const [showShare, setShowShare] = useState(false);
   const [showConsent, setShowConsent] = useState(false);
   const [pendingScore, setPendingScore] = useState(0);
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [showAuth, setShowAuth] = useState(false);
+
+  // Auth listener
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) loadProfile(session.user.id);
+      setAuthLoading(false);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) loadProfile(session.user.id);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const loadProfile = async (userId) => {
+    const { data } = await supabase.from("profiles").select("*").eq("id", userId).single();
+    if (data) {
+      setScore(data.score || 0);
+      setStreak(data.streak || 0);
+      setTotalSaved(data.total_saved || 0);
+      if (data.plan === "premium") setPremium(true);
+    } else {
+      // Create profile if doesn't exist
+      await supabase.from("profiles").insert({ id: userId });
+    }
+  };
+
+  const saveProfile = useCallback(async () => {
+    if (!user) return;
+    await supabase.from("profiles").upsert({ id: user.id, score, streak, total_saved: totalSaved });
+  }, [user, score, streak, totalSaved]);
+
+  // Auto-save every time key data changes
+  useEffect(() => { saveProfile(); }, [streak, totalSaved]);
 
   const addSavings = useCallback((a) => setTotalSaved(t => t + a), []);
   const allocateSavings = useCallback((a) => setTotalSaved(t => Math.max(0, t - a)), []);
@@ -2240,6 +2360,13 @@ export default function App() {
     setScore(s);
     setShowReveal(true);
   };
+
+  if (authLoading) return (
+    <div style={{ maxWidth: 430, margin: "0 auto", minHeight: "100vh", background: "#0D0D0D", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ width: 48, height: 48, borderRadius: "50%", border: "2px solid rgba(156,175,136,0.3)", borderTop: "2px solid #9CAF88", animation: "spin 1s linear infinite" }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
 
   if (showReveal && !showConsent) return (
     <div style={{ maxWidth: 430, margin: '0 auto', minHeight: '100vh', background: '#0D0D0D', position: 'relative', overflow: 'hidden' }}>
@@ -2304,9 +2431,10 @@ export default function App() {
       {page === "streak" && premium && <Streak streak={streak} setStreak={setStreak} totalSaved={totalSaved} addSavings={addSavings} setPage={setPage} />}
       {page === "goals" && premium && <Goals totalSaved={totalSaved} allocateSavings={allocateSavings} />}
       {page === "community" && premium && <Community userScore={score} />}
-      {page === "profile" && premium && <Profile score={score} streak={streak} totalSaved={totalSaved} setPremium={setPremium} setPage={setPage} />}
+      {page === "profile" && premium && <Profile score={score} streak={streak} totalSaved={totalSaved} setPremium={setPremium} setPage={setPage} user={user} setShowAuth={setShowAuth} />}
       {showNav && <BottomNavV2 page={page} setPage={setPage} />}
       {showShare && page !== "results" && <ShareCard score={score} onClose={() => setShowShare(false)} />}
+      {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
     </div>
   );
 }
