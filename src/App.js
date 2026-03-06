@@ -2139,7 +2139,7 @@ function Profile({ score, streak, totalSaved, setPremium, setPage, user, setShow
             <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 24, lineHeight: 1.6 }}>Tes données locales seront conservées. Tu pourras te reconnecter à tout moment.</p>
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => setShowLogout(false)} className="btn-ghost" style={{ flex: 1, padding: "14px" }}>Annuler</button>
-              <button onClick={() => { await supabase.auth.signOut(); setPremium(false); setPage("home"); setShowLogout(false); }} style={{ flex: 1, padding: "14px", background: "#E09080", border: "none", borderRadius: 100, color: "white", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>Déconnecter</button>
+              <button onClick={async () => { await supabase.auth.signOut(); setPremium(false); setPage("home"); setShowLogout(false); }} style={{ flex: 1, padding: "14px", background: "#E09080", border: "none", borderRadius: 100, color: "white", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>Déconnecter</button>
             </div>
           </div>
         </div>
