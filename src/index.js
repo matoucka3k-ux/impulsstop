@@ -1,6 +1,84 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ImpulsStop</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --ink: #0D0D0D;
+        --ink-2: #1A1A1A;
+        --mist: #F0EDE8;
+        --sage: #9CAF88;
+        --sage-dark: #7D9B6A;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { background: #0D0D0D; color: #F0EDE8; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App />);
+      @keyframes fade-up    { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+      @keyframes fade-in    { from { opacity:0; } to { opacity:1; } }
+      @keyframes scale-in   { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:scale(1); } }
+      @keyframes slide-up   { from { transform:translateY(32px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+      @keyframes shimmer    { 0% { background-position:-200% center; } 100% { background-position:200% center; } }
+      @keyframes breathe    { 0%,100% { transform:scale(1); opacity:0.6; } 50% { transform:scale(1.05); opacity:1; } }
+      @keyframes dot-bounce { from { transform:translateY(0); } to { transform:translateY(-6px); } }
+      @keyframes pulse-opacity { from { opacity:0.3; } to { opacity:1; } }
+      @keyframes confetti-fall { 0% { transform:translateY(-10px) rotate(0deg); opacity:1; } 100% { transform:translateY(100vh) rotate(720deg); opacity:0; } }
+
+      .fade-up   { animation: fade-up  0.6s cubic-bezier(0.16,1,0.3,1) forwards; }
+      .fade-up-1 { animation: fade-up  0.6s 0.05s cubic-bezier(0.16,1,0.3,1) both; }
+      .fade-up-2 { animation: fade-up  0.6s 0.15s cubic-bezier(0.16,1,0.3,1) both; }
+      .fade-up-3 { animation: fade-up  0.6s 0.25s cubic-bezier(0.16,1,0.3,1) both; }
+      .fade-up-4 { animation: fade-up  0.6s 0.35s cubic-bezier(0.16,1,0.3,1) both; }
+      .fade-up-5 { animation: fade-up  0.6s 0.45s cubic-bezier(0.16,1,0.3,1) both; }
+      .scale-in  { animation: scale-in 0.4s cubic-bezier(0.16,1,0.3,1) forwards; }
+      .fade-in   { animation: fade-in  0.35s ease forwards; }
+
+      .shimmer-text {
+        background: linear-gradient(90deg, #F0EDE8 0%, #9CAF88 50%, #F0EDE8 100%);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: shimmer 4s linear infinite;
+      }
+
+      .glass      { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(12px); }
+      .glass-sage { background: rgba(156,175,136,0.08); border: 1px solid rgba(156,175,136,0.2); }
+
+      .btn-primary { background: #9CAF88; color: #0D0D0D; font-family: 'DM Sans', sans-serif; font-weight: 600; border-radius: 100px; border: none; cursor: pointer; transition: all 0.2s cubic-bezier(0.16,1,0.3,1); }
+      .btn-primary:hover  { background: #7D9B6A; }
+      .btn-primary:active { transform: scale(0.97); }
+
+      .btn-ghost { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #F0EDE8; font-family: 'DM Sans', sans-serif; font-weight: 500; border-radius: 100px; cursor: pointer; transition: all 0.2s; }
+      .btn-ghost:hover  { background: rgba(255,255,255,0.1); }
+      .btn-ghost:active { transform: scale(0.97); }
+
+      .option-card { background: rgba(255,255,255,0.04); border: 1.5px solid rgba(255,255,255,0.08); border-radius: 14px; cursor: pointer; transition: all 0.2s; }
+      .option-card:hover    { border-color: rgba(156,175,136,0.5); background: rgba(156,175,136,0.06); }
+      .option-card.selected { border-color: #9CAF88; background: rgba(156,175,136,0.1); }
+      .option-card:active   { transform: scale(0.99); }
+
+      .progress-bar  { height: 3px; background: rgba(255,255,255,0.08); border-radius: 100px; overflow: hidden; }
+      .progress-fill { height: 100%; background: #9CAF88; border-radius: 100px; transition: width 0.5s cubic-bezier(0.16,1,0.3,1); }
+
+      .nav-tab { transition: color 0.2s; }
+      .nav-tab.active       { color: #9CAF88; }
+      .nav-tab:not(.active) { color: rgba(255,255,255,0.25); }
+
+      .confetti-piece { position: fixed; border-radius: 2px; animation: confetti-fall linear forwards; z-index: 9999; pointer-events: none; }
+
+      input[type=number]::-webkit-inner-spin-button,
+      input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+      input, textarea { font-family: 'DM Sans', sans-serif; }
+    </style>
+    <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
