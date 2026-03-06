@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { ImpulsScoreReveal, ShareCard, Community, launchConfetti as fireConfetti, getConfig } from "./ImpulsScore";
-// Supabase loaded via CDN in index.html
-const getSupabase = () => {
-  try { return window.supabase?.createClient("https://uqolnnpsjezrqkmtdqqi.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxb2xubnBzamV6cnFrbXRkcXFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MDkxMDksImV4cCI6MjA4ODM4NTEwOX0.gv0PD-KzmdrxSq5gE1hxbkIdWnUod_JdeMud261YTlc"); }
-  catch(e) { return null; }
-};
-const supabase = getSupabase();
+// Supabase loaded via CDN
+const SUPA_URL = "https://uqolnnpsjezrqkmtdqqi.supabase.co";
+const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxb2xubnBzamV6cnFrbXRkcXFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MDkxMDksImV4cCI6MjA4ODM4NTEwOX0.gv0PD-KzmdrxSq5gE1hxbkIdWnUod_JdeMud261YTlc";
+let supabase = null;
+try {
+  if (window.supabase && window.supabase.createClient) {
+    supabase = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+  }
+} catch(e) { supabase = null; }
 
 // ─── UTILS ───────────────────────────────────────────────────────────────────
 function launchConfetti() {
@@ -2248,10 +2251,12 @@ function AuthModal({ onClose }) {
   // Wait for supabase CDN to be ready
   const getClient = () => {
     if (supabase) return supabase;
-    if (window.supabase) return window.supabase.createClient(
-      "https://uqolnnpsjezrqkmtdqqi.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxb2xubnBzamV6cnFrbXRkcXFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MDkxMDksImV4cCI6MjA4ODM4NTEwOX0.gv0PD-KzmdrxSq5gE1hxbkIdWnUod_JdeMud261YTlc"
-    );
+    try {
+      if (window.supabase && window.supabase.createClient) {
+        const c = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+        return c;
+      }
+    } catch(e) {}
     return null;
   };
 
